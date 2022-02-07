@@ -1,8 +1,10 @@
 
+import { Vector3 } from '@math.gl/core';
+
 const canvasWidth = 800;
 const canvasHeight = 500;
 
-const create = () => {
+const create = (): WebGL2RenderingContext => {
 
   const canvas = document.createElement('canvas');
   canvas.width = canvasWidth;
@@ -17,15 +19,57 @@ const create = () => {
   if(!gl)
     throw new Error("Webgl couldn't instanciate");
 
-  return { canvas, gl };
+  gl.clearColor(0.0, 0.0, 0.0, 1.0);
+  gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
+
+  return gl;
 };
+
 
 const main = () => {
 
-  const { canvas, gl } = create();
+  const gl = create();
 
-  gl.viewport(0, 0, canvasWidth, canvasHeight);
+  // const world = createWorld(); // {};
+  
+  // state = { Player, World };
 
-  gl.clearColor(0.0, 0.0, 0.0, 1.0);
-  gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
+  let previousTime = -1;
+  const gameloop = (time: number) => {
+    
+    if(previousTime == -1)
+      previousTime = time;
+    const delta = time - previousTime;
+
+    // dispatch("input",  state, delta);
+    // dispatch("tick",   state, delta);
+    // dispatch("render", state, delta);
+
+
+    previousTime = time;
+    requestAnimationFrame(gameloop);
+  };
+
+  requestAnimationFrame(gameloop);
 };
+
+/*
+type Chunk = {
+  position: Array<number>;
+  blocks: Array<number>;
+};
+
+const Player = {};
+const World = {
+  chunks: Chunk[];
+};
+
+
+const Systems = new Map<string, (world: object, player: object) => void>;
+
+const dispatch = (event: string) => {
+
+  Systems.get(event)(World, Player);
+
+};
+*/

@@ -11,6 +11,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@math.gl/core": "^3.5.7",
     "@tsconfig/node14": "^1.0.1",
     "koa": "^2.13.4",
     "koa-static": "^5.0.0",
