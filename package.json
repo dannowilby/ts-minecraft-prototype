@@ -4,7 +4,7 @@
   "description": "This project is made for two purposes. The first is to function as my assignment for my computer graphics course. That means that, above all else in the beginning, a simple game to navigate around a randomly generated voxel maze. The second is to make a minecraft clone that has a more real-to-life simulation of fluids. This will be the prototype to another minecraft clone written in a compiled language.",
   "main": "index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "webpack",
     "serve": "node server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -15,6 +15,9 @@
     "@tsconfig/node14": "^1.0.1",
     "koa": "^2.13.4",
     "koa-static": "^5.0.0",
-    "typescript": "^4.5.5"
+    "ts-loader": "^9.2.6",
+    "typescript": "^4.5.5",
+    "webpack": "^5.68.0",
+    "webpack-cli": "^4.9.2"
   }
 }
