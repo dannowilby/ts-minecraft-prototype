@@ -11,7 +11,7 @@ import { Vector3, Matrix4 } from '@math.gl/core';
 // 3rd party additions... yet
 export type MotionComponent = { pos: Vector3, vel: Vector3 };
 export type BlockStructureComponent = number[][][];
-export type StaticRenderObjectComponent = { vao: number, program: number, model: Matrix4 };
+export type StaticRenderObjectComponent = { vao: WebGLVertexArrayObject, program: WebGLProgram, model: Matrix4, count: number };
 
 // creates the storages for the different components
 // to add a component, directly modify the object
