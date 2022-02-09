@@ -3,7 +3,7 @@ import { Matrix4 } from '@math.gl/core';
 
 import { createEntities, createComponents, Components, Entity, StaticRenderObjectComponent } from './state';
 import { createSystems, addSystem, dispatch_event, System } from './system';
-import { createPlayer, Player } from './player';
+import { createPlayer, Player, projectionMatrix } from './player';
 import { renderStaticObjects } from './render';
 
 const canvasWidth = 800;
@@ -12,8 +12,8 @@ const canvasHeight = 500;
 const create = (): WebGL2RenderingContext => {
 
   const canvas = document.createElement('canvas');
-  canvas.width = canvasWidth;
-  canvas.height = canvasHeight;
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
   canvas.style.display = "block";
   canvas.style.margin = "auto";
 
@@ -24,11 +24,22 @@ const create = (): WebGL2RenderingContext => {
   if(!gl)
     throw new Error("Webgl couldn't instanciate");
 
+
   gl.clearColor(0.0, 0.0, 0.0, 1.0);
   gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
 
   return gl;
 };
+
+const onResize = (gl: WebGLRenderingContext, player: Player) => () => {
+  const w = window.innerWidth, h = window.innerHeight;
+  
+  gl.canvas.width = w;
+  gl.canvas.height = h;
+  gl.viewport(0, 0, w, h);
+  
+  player.projection = projectionMatrix(w, h);
+}
 
 const main = () => {
 
@@ -36,6 +47,8 @@ const main = () => {
   
   const { player, entities, components, systems } = init(gl);
   const dispatch = dispatch_event(gl)(player, entities, components, systems);
+
+  window.onresize = onResize(gl, player);
 
   let previousTime = -1;
   const gameloop = (time: number) => {
@@ -63,7 +76,7 @@ import { cameraInput } from './input';
 
 const init = (gl: WebGL2RenderingContext) => {
 
-  const player = createPlayer(canvasWidth, canvasHeight);
+  const player = createPlayer();
 
   const entities   = createEntities();
   const components = createComponents();
