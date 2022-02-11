@@ -28,6 +28,9 @@ const create = (): WebGL2RenderingContext => {
   gl.clearColor(0.0, 0.0, 0.0, 1.0);
   gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
 
+  gl.enable(gl.CULL_FACE);
+  gl.cullFace(gl.BACK);
+
   return gl;
 };
 
@@ -71,7 +74,7 @@ const main = () => {
 };
 window.addEventListener('load', main);
 
-import { initChunks } from './chunk';
+import { initChunks } from './chunk/chunk';
 import { cameraInput } from './input';
 
 const init = (gl: WebGL2RenderingContext) => {
