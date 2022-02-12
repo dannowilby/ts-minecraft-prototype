@@ -3,7 +3,7 @@ import { Matrix4 } from '@math.gl/core';
 
 import { createEntities, createComponents, Components, Entity, StaticRenderObjectComponent } from './state';
 import { createSystems, addSystem, dispatch_event, System } from './system';
-import { createPlayer, Player, projectionMatrix } from './player';
+import { createPlayer, Player, projectionMatrix, cameraInput } from './player';
 import { renderStaticObjects } from './render';
 
 const canvasWidth = 800;
@@ -16,6 +16,11 @@ const create = (): WebGL2RenderingContext => {
   canvas.height = window.innerHeight;
   canvas.style.display = "block";
   canvas.style.margin = "auto";
+
+  canvas.onclick = () => {
+    canvas.requestPointerLock();
+  };
+
 
   document.body.appendChild(canvas);
 
@@ -75,11 +80,18 @@ const main = () => {
 window.addEventListener('load', main);
 
 import { initChunks } from './chunk/chunk';
-import { cameraInput } from './input';
 
 const init = (gl: WebGL2RenderingContext) => {
 
   const player = createPlayer();
+
+  const lockChangeAlert = () => {
+    if (document.pointerLockElement === gl.canvas)
+      player.locked = true;
+    else
+      player.locked = false;
+  }
+  document.addEventListener('pointerlockchange', lockChangeAlert, false);
 
   const entities   = createEntities();
   const components = createComponents();
