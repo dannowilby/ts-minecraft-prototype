@@ -49,6 +49,7 @@ const onResize = (gl: WebGLRenderingContext, player: Player) => () => {
   player.projection = projectionMatrix(w, h);
 }
 
+let fps = 0;
 const main = () => {
 
   const gl = create();
@@ -57,6 +58,14 @@ const main = () => {
   const dispatch = dispatch_event(gl)(player, entities, components, systems);
 
   window.onresize = onResize(gl, player);
+
+  let frames = 0;
+  let times = 0;
+  setInterval(() => {
+    console.log(fps)
+    frames = 0;
+    times = 0;
+  }, 1000);
 
   let previousTime = -1;
   const gameloop = (time: number) => {
@@ -70,6 +79,10 @@ const main = () => {
     dispatch("input",  delta);
     dispatch("tick",   delta);
     dispatch("render", delta);
+
+    times = times + delta;
+    frames = frames + 1;
+    fps = frames / times;
 
     previousTime = time;
     requestAnimationFrame(gameloop);
