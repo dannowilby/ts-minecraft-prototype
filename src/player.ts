@@ -126,7 +126,6 @@ export const cameraInput = (gl: WebGL2RenderingContext, player: Player, entities
   if(player.activeInput.has("shift"))
     player.position.subtract(multiplyAndDestructVector3(up, delta * speed))
 
-
   document.onmousemove = (e) => {
     if(player.locked) {
       player.yaw += e.movementX;
