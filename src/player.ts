@@ -9,6 +9,7 @@ export type Player = {
 
   position: Vector3,
   direction: Vector3,
+  speed: number,
 
   pitch: number,
   yaw: number,
@@ -16,7 +17,7 @@ export type Player = {
   atlas: WebGLTexture,
 
   locked: boolean,
-  activeInput: string[]
+  activeInput: Set<string>
 };
 
 export const projectionMatrix = (w: number, h: number): Matrix4 => (
@@ -34,13 +35,18 @@ export const createPlayer = (gl: WebGL2RenderingContext, atlasUrl: string): Play
   const player = {
     projection: projectionMatrix(window.innerWidth, window.innerHeight),
     view: new Matrix4().identity(),
+    
     position: new Vector3(0, 0, 1),
     direction: new Vector3(0, 0, -1),
+    speed: 10,
+
     pitch: 0,
     yaw: -90.0,
-    locked: false,
+     
     atlas: loadTexture(gl, atlasUrl),
-    activeInput: []
+    
+    locked: false,
+    activeInput: new Set<string>()
   };
 
   const lockChangeAlert = () => {
@@ -98,23 +104,28 @@ export const cameraInput = (gl: WebGL2RenderingContext, player: Player, entities
   const move = multiplyAndDestructVector3(player.direction, speed * delta);
   const strafe = multiplyAndDestructVector3(functionalCrossVector3(player.direction, up), speed * delta);
 
-  window.onkeydown = (e) => {
-    
-    if(e.key == "w")
-      player.position.add(move);
-    if(e.key == "s")
-      player.position.subtract(move);
-    if(e.key == "a")
-      player.position.subtract(strafe);
-    if(e.key == "d")
-      player.position.add(strafe);
-    if(e.key == " ")
-      player.position.add(multiplyAndDestructVector3(up, delta * speed))
-    if(e.key == "x")
-      player.position.subtract(multiplyAndDestructVector3(up, delta * speed))
-
-    updateCamera(player);
+  window.onkeyup = (e) => {
+    player.activeInput.delete(e.key.toLowerCase());
   }
+
+  window.onkeydown = (e) => {
+    if(player.locked)
+      player.activeInput.add(e.key.toLowerCase());
+  }
+
+  if(player.activeInput.has("w"))
+      player.position.add(move);
+  if(player.activeInput.has("s"))
+    player.position.subtract(move);
+  if(player.activeInput.has("a"))
+    player.position.subtract(strafe);
+  if(player.activeInput.has("d"))
+    player.position.add(strafe);
+  if(player.activeInput.has(" "))
+    player.position.add(multiplyAndDestructVector3(up, delta * speed))
+  if(player.activeInput.has("shift"))
+    player.position.subtract(multiplyAndDestructVector3(up, delta * speed))
+
 
   document.onmousemove = (e) => {
     if(player.locked) {
@@ -125,9 +136,8 @@ export const cameraInput = (gl: WebGL2RenderingContext, player: Player, entities
         player.pitch = 89.0;
       if(player.pitch < -89.0)
         player.pitch = -89.0;
-
-      updateCamera(player);
     }
   }
 
+  updateCamera(player);
 };
