@@ -46,6 +46,11 @@ const compileShader = (gl: WebGL2RenderingContext, source: string, type: number)
 export const renderStaticObjects = (gl: WebGL2RenderingContext, player: Player, entities: Entity[], components: Components, delta: number) => {
 
   components.staticRenderObjects.forEach((v, k) => {
+
+    if(k.split("-")[0] != "chu") {
+      console.log(`Not a chunk, skipping: ${k}`);
+      return;
+    }
     
     gl.useProgram(v.program);
     

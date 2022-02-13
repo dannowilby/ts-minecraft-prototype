@@ -45,6 +45,8 @@ export const createChunkRenderObject = (gl: WebGL2RenderingContext, program: Web
 
   if(!vao)
     throw new Error("Failed creating VAO");
+  if(!vbo)
+    throw new Error("Failed creating VBO");
 
   gl.bindVertexArray(vao);
 
@@ -74,12 +76,24 @@ export const createChunkRenderObject = (gl: WebGL2RenderingContext, program: Web
 
   return {
     vao,
+    vbo,
     program,
     model,
     count
   };
 };
 
+export const updateChunkRenderObject = (gl: WebGL2RenderingContext, program: WebGLProgram) => (previous: StaticRenderObjectComponent, mesh: Float32Array) => {
+
+  const { vao, vbo, program, model, count } = previous;
+
+  gl.bindVertexArray(vao);
+
+  gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
+  gl.bufferData(gl.ARRAY_BUFFER, mesh, gl.STATIC_DRAW);
+
+  previous.count = mesh.length / 5;
+};
 
 import { dictionary } from './block';
 

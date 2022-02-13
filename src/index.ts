@@ -3,7 +3,7 @@ import { Matrix4 } from '@math.gl/core';
 
 import { createEntities, createComponents, Components, Entity, StaticRenderObjectComponent } from './state';
 import { createSystems, addSystem, dispatch_event, System } from './system';
-import { createPlayer, Player, projectionMatrix, cameraInput } from './player';
+import { createPlayer, Player, projectionMatrix, freeCameraInput } from './player';
 import { renderStaticObjects } from './render';
 
 const canvasWidth = 800;
@@ -20,7 +20,6 @@ const create = (): WebGL2RenderingContext => {
   canvas.onclick = () => {
     canvas.requestPointerLock();
   };
-
 
   document.body.appendChild(canvas);
 
@@ -63,7 +62,7 @@ const main = () => {
   let frames = 0;
   let times = 0;
   setInterval(() => {
-    console.log(fps)
+    // console.log(fps); // uncomment to print fps in the console
     frames = 0;
     times = 0;
   }, 1000);
@@ -93,9 +92,39 @@ const main = () => {
 };
 window.addEventListener('load', main);
 
-import { initChunks } from './chunk/chunk';
+import { initMaze } from './maze';
+const description = `
+Some info about my project:
 
+Controls mimic minecraft creative mode, 
+just click in the window and then you 
+should be able to fly around. Left clicking 
+will remove blocks in front of you, up to 5 
+blocks away.
+
+The arena is generated randomly each time, 
+so it'll be different if you refresh the page.
+
+I used a very basic ecs system and laid the 
+groundwork for an event system, but due to 
+time constraints the code may resemble a plate
+of spaghetti.
+
+I coded this in typescript and used webpack to
+compile the project into a simple bundle file.
+I used math.gl/core so that I could use predefined
+Vector3 and Matrix4 classes, specifically for the 
+lookAt and perspective functions.
+
+The texture atlas I used for the blocks is taken
+from The Painterly Pack: http://painterlypack.net/.
+
+I've also uploaded this project to my github incase 
+I decide to work on it further.
+`;
 const init = (gl: WebGL2RenderingContext) => {
+
+  console.log(description);
 
   const atlas = "atlas.png";
   const player = createPlayer(gl, atlas);
@@ -104,10 +133,10 @@ const init = (gl: WebGL2RenderingContext) => {
   const components = createComponents();
   const systems    = createSystems();
 
-  initChunks(gl, entities, components);
+  initMaze(gl, entities, components);
 
   addSystem(systems, "render", renderStaticObjects);
-  addSystem(systems, "input",  cameraInput);
+  addSystem(systems, "input",  freeCameraInput);
 
   return { player, entities, components, systems };
 }

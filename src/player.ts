@@ -2,6 +2,7 @@
 import { Vector3, Matrix4 } from '@math.gl/core';
 import { Entity, Components } from './state';
 import { loadTexture } from './render';
+import { setBlock, getBlock, updateChunk } from './chunk/chunk';
 
 export type Player = {
   projection: Matrix4,
@@ -96,7 +97,26 @@ const functionalCrossVector3 = (v1: Vector3, v2: Vector3) => {
   return v.cross([ v2.x, v2.y, v2.z ]).normalize();
 };
 
-export const cameraInput = (gl: WebGL2RenderingContext, player: Player, entities: Entity[], components: Components, delta: number) => {
+const rayTrace = (entities: Entity[], components: Components, player: Player) => (stepValue: number, numSteps: number) => (onHit: (pos: Vector3) => void) => {
+
+  const step = multiplyAndDestructVector3(player.direction, stepValue);
+  const ray = new Vector3(player.position.x, player.position.y, player.position.z);
+
+  for(let i = 0; i < numSteps; i++) {
+    
+    if(getBlock(entities, components)(ray) != 0) {
+      onHit(ray);
+      return;
+    }
+
+    ray.x = ray.x + step[0];
+    ray.y = ray.y + step[1];
+    ray.z = ray.z + step[2];
+  }
+
+};
+
+export const freeCameraInput = (gl: WebGL2RenderingContext, player: Player, entities: Entity[], components: Components, delta: number) => {
 
   const speed = 10;
 
@@ -136,6 +156,14 @@ export const cameraInput = (gl: WebGL2RenderingContext, player: Player, entities
       if(player.pitch < -89.0)
         player.pitch = -89.0;
     }
+  }
+
+  document.onclick = (e) => {
+
+    rayTrace(entities, components, player)(0.05, 100)((pos: Vector3) => {
+      setBlock(entities, components)(pos, 0);
+      updateChunk(gl, entities, components)(pos);
+    });
   }
 
   updateCamera(player);
