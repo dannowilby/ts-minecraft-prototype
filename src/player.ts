@@ -1,16 +1,22 @@
 
 import { Vector3, Matrix4 } from '@math.gl/core';
 import { Entity, Components } from './state';
+import { loadTexture } from './render';
 
 export type Player = {
   projection: Matrix4,
   view: Matrix4,
+
   position: Vector3,
-  velocity: Vector3,
   direction: Vector3,
+
   pitch: number,
   yaw: number,
-  locked: boolean
+
+  atlas: WebGLTexture,
+
+  locked: boolean,
+  activeInput: string[]
 };
 
 export const projectionMatrix = (w: number, h: number): Matrix4 => (
@@ -23,18 +29,27 @@ export const projectionMatrix = (w: number, h: number): Matrix4 => (
     })
 ); 
 
-export const createPlayer = (): Player => {
+export const createPlayer = (gl: WebGL2RenderingContext, atlasUrl: string): Player => {
 
   const player = {
     projection: projectionMatrix(window.innerWidth, window.innerHeight),
     view: new Matrix4().identity(),
     position: new Vector3(0, 0, 1),
-    velocity: new Vector3(0, 0, 0),
     direction: new Vector3(0, 0, -1),
     pitch: 0,
     yaw: -90.0,
-    locked: false
+    locked: false,
+    atlas: loadTexture(gl, atlasUrl),
+    activeInput: []
   };
+
+  const lockChangeAlert = () => {
+    if (document.pointerLockElement === gl.canvas)
+      player.locked = true;
+    else
+      player.locked = false;
+  }
+  document.addEventListener('pointerlockchange', lockChangeAlert, false);
 
   updateCamera(player);
 
@@ -93,6 +108,10 @@ export const cameraInput = (gl: WebGL2RenderingContext, player: Player, entities
       player.position.subtract(strafe);
     if(e.key == "d")
       player.position.add(strafe);
+    if(e.key == " ")
+      player.position.add(multiplyAndDestructVector3(up, delta * speed))
+    if(e.key == "x")
+      player.position.subtract(multiplyAndDestructVector3(up, delta * speed))
 
     updateCamera(player);
   }

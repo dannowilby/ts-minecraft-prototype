@@ -7,12 +7,16 @@ import { chunkSize } from './chunk';
 export const chunkVertexShader = `#version 300 es
 
   in vec3 v_Position;
+  in vec2 uv_Coords;
 
   uniform mat4 projection;
   uniform mat4 view;
   uniform mat4 model;
 
+  out vec2 text_coords;
+
   void main() {
+    text_coords = uv_Coords;
     gl_Position = projection * view * model * vec4(v_Position, 1.0);
   }
 
@@ -22,10 +26,14 @@ export const chunkFragmentShader = `#version 300 es
 
   precision highp float;
 
+  in vec2 text_coords;
+
+  uniform sampler2D texture_atlas;
+
   out vec4 frag_color;
 
   void main() {
-    frag_color = vec4(1.0, 0.0, 0.0, 1.0);
+    frag_color = texture(texture_atlas, text_coords);
   }
 
 `;
@@ -43,15 +51,23 @@ export const createChunkRenderObject = (gl: WebGL2RenderingContext, program: Web
   gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
   gl.bufferData(gl.ARRAY_BUFFER, mesh, gl.STATIC_DRAW);
 
-  const size   = 3;
-  const stride = 4 * 3;
-  const offset = 0;
+  const vertexSize = 3;
+  const uvSize = 2;
+
+  const stride = 4 * 5;
+  
+  const vertexOffset = 0;
+  const uvOffset = 4 * 3;
 
   const positionAttributeLocation = gl.getAttribLocation(program, 'v_Position');
-  gl.vertexAttribPointer(positionAttributeLocation, size, gl.FLOAT, false, stride, offset);
+  gl.vertexAttribPointer(positionAttributeLocation, vertexSize, gl.FLOAT, false, stride, vertexOffset);
   gl.enableVertexAttribArray(positionAttributeLocation);
 
-  const count = mesh.length / 3;
+  const uvAttributeLocation = gl.getAttribLocation(program, 'uv_Coords');
+  gl.vertexAttribPointer(uvAttributeLocation, uvSize, gl.FLOAT, false, stride, uvOffset);
+  gl.enableVertexAttribArray(uvAttributeLocation);
+
+  const count = mesh.length / 5;
 
   const model = new Matrix4();
   model.identity().translate([ pos.x * chunkSize, pos.y * chunkSize, pos.z * chunkSize ]);
@@ -111,59 +127,61 @@ export const naiveMeshing = (blockStructure: BlockStructureComponent): Float32Ar
   return new Float32Array(output);
 }
 
+
+// TODO: replace 0.0625 with texel dimensions
 export const fullBlockMesh = {
 
   southFace: (x, y, z, u, v) => ([
-    0.0 + x, 0.0 + y, 0.0 + z,
-    1.0 + x, 1.0 + y, 0.0 + z,
-    1.0 + x, 0.0 + y, 0.0 + z,
-    0.0 + x, 0.0 + y, 0.0 + z,
-    0.0 + x, 1.0 + y, 0.0 + z,
-    1.0 + x, 1.0 + y, 0.0 + z
+    0.0 + x, 0.0 + y, 0.0 + z, u, v,
+    1.0 + x, 1.0 + y, 0.0 + z, u + 0.0625, v + 0.0625,
+    1.0 + x, 0.0 + y, 0.0 + z, u + 0.0625, v,
+    0.0 + x, 0.0 + y, 0.0 + z, u, v,
+    0.0 + x, 1.0 + y, 0.0 + z, u, v + 0.0625,
+    1.0 + x, 1.0 + y, 0.0 + z, u + 0.0625, v + 0.0625
   ]),
 
   northFace: (x, y, z, u, v) => ([
-    0.0 + x, 0.0 + y, 1.0 + z,
-    1.0 + x, 0.0 + y, 1.0 + z,
-    1.0 + x, 1.0 + y, 1.0 + z,
-    0.0 + x, 0.0 + y, 1.0 + z,
-    1.0 + x, 1.0 + y, 1.0 + z,
-    0.0 + x, 1.0 + y, 1.0 + z
+    0.0 + x, 0.0 + y, 1.0 + z, u, v,
+    1.0 + x, 0.0 + y, 1.0 + z, u, v + 0.0625,
+    1.0 + x, 1.0 + y, 1.0 + z, u + 0.0625, v + 0.0625,
+    0.0 + x, 0.0 + y, 1.0 + z, u, v,
+    1.0 + x, 1.0 + y, 1.0 + z, u + 0.0625, v + 0.0625,
+    0.0 + x, 1.0 + y, 1.0 + z, u, v + 0.0625
   ]),
 
   westFace: (x, y, z, u, v) => ([
-    0.0 + x, 0.0 + y, 0.0 + z,
-    0.0 + x, 0.0 + y, 1.0 + z,
-    0.0 + x, 1.0 + y, 1.0 + z,
-    0.0 + x, 0.0 + y, 0.0 + z,
-    0.0 + x, 1.0 + y, 1.0 + z,
-    0.0 + x, 1.0 + y, 0.0 + z
+    0.0 + x, 0.0 + y, 0.0 + z, u, v,
+    0.0 + x, 0.0 + y, 1.0 + z, u, v + 0.0625,
+    0.0 + x, 1.0 + y, 1.0 + z, u + 0.0625, v + 0.0625,
+    0.0 + x, 0.0 + y, 0.0 + z, u, v,
+    0.0 + x, 1.0 + y, 1.0 + z, u + 0.0625, v + 0.0625,
+    0.0 + x, 1.0 + y, 0.0 + z, u + 0.0625, v
   ]),
 
   eastFace: (x, y, z, u, v) => ([
-    1.0 + x, 0.0 + y, 0.0 + z,
-    1.0 + x, 1.0 + y, 0.0 + z,
-    1.0 + x, 1.0 + y, 1.0 + z,
-    1.0 + x, 0.0 + y, 0.0 + z,
-    1.0 + x, 1.0 + y, 1.0 + z,
-    1.0 + x, 0.0 + y, 1.0 + z
+    1.0 + x, 0.0 + y, 0.0 + z, u, v,
+    1.0 + x, 1.0 + y, 0.0 + z, u + 0.0625, v,
+    1.0 + x, 1.0 + y, 1.0 + z, u + 0.0625, v + 0.0625,
+    1.0 + x, 0.0 + y, 0.0 + z, u, v,
+    1.0 + x, 1.0 + y, 1.0 + z, u + 0.0625, v + 0.0625,
+    1.0 + x, 0.0 + y, 1.0 + z, u, v + 0.0625 
   ]),
 
   topFace: (x, y, z, u, v) => ([
-    0.0 + x, 1.0 + y, 0.0 + z,
-    1.0 + x, 1.0 + y, 1.0 + z,
-    1.0 + x, 1.0 + y, 0.0 + z,
-    0.0 + x, 1.0 + y, 0.0 + z,
-    0.0 + x, 1.0 + y, 1.0 + z,
-    1.0 + x, 1.0 + y, 1.0 + z
+    0.0 + x, 1.0 + y, 0.0 + z, u, v,
+    1.0 + x, 1.0 + y, 1.0 + z, u + 0.0625, v + 0.0625,
+    1.0 + x, 1.0 + y, 0.0 + z, u + 0.0625, v,
+    0.0 + x, 1.0 + y, 0.0 + z, u, v,
+    0.0 + x, 1.0 + y, 1.0 + z, u, v + 0.0625,
+    1.0 + x, 1.0 + y, 1.0 + z, u + 0.0625, v + 0.0625
   ]),
 
   bottomFace: (x, y, z, u, v) => ([
-    0.0 + x, 0.0 + y, 0.0 + z,
-    1.0 + x, 0.0 + y, 0.0 + z,
-    1.0 + x, 0.0 + y, 1.0 + z,
-    0.0 + x, 0.0 + y, 0.0 + z,
-    1.0 + x, 0.0 + y, 1.0 + z,
-    0.0 + x, 0.0 + y, 1.0 + z
+    0.0 + x, 0.0 + y, 0.0 + z, u, v,
+    1.0 + x, 0.0 + y, 0.0 + z, u + 0.0625, v,
+    1.0 + x, 0.0 + y, 1.0 + z, u + 0.0625, v + 0.0625,
+    0.0 + x, 0.0 + y, 0.0 + z, u, v,
+    1.0 + x, 0.0 + y, 1.0 + z, u + 0.0625, v + 0.0625,
+    0.0 + x, 0.0 + y, 1.0 + z, u, v + 0.0625
   ]),
 };

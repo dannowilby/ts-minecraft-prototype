@@ -53,6 +53,9 @@ export const renderStaticObjects = (gl: WebGL2RenderingContext, player: Player, 
     const view       = gl.getUniformLocation(v.program, "view");
     const model      = gl.getUniformLocation(v.program, "model");
 
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, player.atlas);
+
     gl.uniformMatrix4fv(projection, false, player.projection);
     gl.uniformMatrix4fv(view, false, player.view);
     gl.uniformMatrix4fv(model, false, v.model);
@@ -63,3 +66,55 @@ export const renderStaticObjects = (gl: WebGL2RenderingContext, player: Player, 
   });
 
 }
+
+/*
+ * Assumes the texture size is a power of 2. Generates mipmaps
+ */
+export const loadTexture = (gl: WebGL2RenderingContext, url: string): WebGLTexture => {
+
+  const texture = gl.createTexture();
+  if(!texture)
+    throw new Error("WebGL couldn't create needed textures");
+
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, texture);
+
+  const level = 0;
+  const internalFormat = gl.RGBA;
+  const width = 1;
+  const height = 1;
+  const border = 0;
+  const srcFormat = gl.RGBA;
+  const srcType = gl.UNSIGNED_BYTE;
+  const pixel = new Uint8Array([ 255, 0, 255, 255 ]);
+  
+  gl.texImage2D(
+    gl.TEXTURE_2D, 
+    level, 
+    internalFormat,
+    width, 
+    height, 
+    border, 
+    srcFormat, 
+    srcType,
+    pixel
+  );
+
+  const image = new Image();
+  image.onload = () => {
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, srcFormat, srcType, image);
+
+    gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    // gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+    // gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+
+    gl.generateMipmap(gl.TEXTURE_2D);
+  }
+  image.src = url;
+
+  return texture;
+}
+
+

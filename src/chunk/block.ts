@@ -15,7 +15,7 @@ export const dictionary = {
     name: 'dirt',
     type: 'fullBlock',
     mesh: fullBlockMesh,
-    u: 0,
+    u: 0.125,
     v: 0
   },
 
@@ -23,7 +23,7 @@ export const dictionary = {
     name: 'stone',
     type: 'fullBlock',
     mesh: fullBlockMesh,
-    u: 1,
+    u: 0.0625,
     v: 0
   },
 

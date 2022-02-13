@@ -33,6 +33,7 @@ const create = (): WebGL2RenderingContext => {
   gl.clearColor(0.0, 0.0, 0.0, 1.0);
   gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
 
+  gl.enable(gl.DEPTH_TEST);
   gl.enable(gl.CULL_FACE);
   gl.cullFace(gl.BACK);
 
@@ -96,15 +97,8 @@ import { initChunks } from './chunk/chunk';
 
 const init = (gl: WebGL2RenderingContext) => {
 
-  const player = createPlayer();
-
-  const lockChangeAlert = () => {
-    if (document.pointerLockElement === gl.canvas)
-      player.locked = true;
-    else
-      player.locked = false;
-  }
-  document.addEventListener('pointerlockchange', lockChangeAlert, false);
+  const atlas = "atlas.png";
+  const player = createPlayer(gl, atlas);
 
   const entities   = createEntities();
   const components = createComponents();

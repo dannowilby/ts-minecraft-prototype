@@ -30,7 +30,13 @@ const generateSolidChunk = () => {
     for(let j = 0; j < chunkSize; j++) {
       output[i].push([])
       for(let k = 0; k < chunkSize; k++) {
+        const r = Math.random();
+        if(r > 0.25 && r < 0.75)
           output[i][j].push(1);
+        else if(r > 0.75)
+          output[i][j].push(2);
+        else
+          output[i][j].push(0);
       }
     }
   }
