@@ -1,4 +1,5 @@
 
+import { MinHeap } from './MinHeap';
 import { Vector3, Matrix4 } from '@math.gl/core';
 
 /*
@@ -12,7 +13,7 @@ import { Vector3, Matrix4 } from '@math.gl/core';
 export type MotionComponent = { pos: Vector3, vel: Vector3 };
 export type BlockStructureComponent = number[][][];
 export type StaticRenderObjectComponent = { vao: WebGLVertexArrayObject, vbo: WebGLBuffer, program: WebGLProgram, model: Matrix4, count: number };
-
+import { FluidPoint } from './fluid';
 // creates the storages for the different components
 // to add a component, directly modify the object
 // (it's not the best pattern, but it works for now)
@@ -22,7 +23,8 @@ export type Components = {
 export const createComponents = () => ({
   motions:             new Map<EntityId, MotionComponent>(), 
   blockStructures:     new Map<EntityId, BlockStructureComponent>(), 
-  staticRenderObjects: new Map<EntityId, StaticRenderObjectComponent>()
+  staticRenderObjects: new Map<EntityId, StaticRenderObjectComponent>(),
+  fluidPoints:         new Map<EntityId, MinHeap<FluidPoint>>(),
 });
 
 
