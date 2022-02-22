@@ -28,8 +28,6 @@ const generateMazeChunk = (): BlockStructureComponent => {
 
   generateWalls(output, generateWallMap());
 
-  generateCeiling(output);
-
   return output;
 };
 

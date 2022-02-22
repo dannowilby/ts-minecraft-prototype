@@ -19,6 +19,9 @@ export type Player = {
 
   locked: boolean,
   activeInput: Set<string>
+
+  displayNormals: boolean,
+  displayLighting: boolean,
 };
 
 export const projectionMatrix = (w: number, h: number): Matrix4 => (
@@ -47,7 +50,10 @@ export const createPlayer = (gl: WebGL2RenderingContext, atlasUrl: string): Play
     atlas: loadTexture(gl, atlasUrl),
     
     locked: false,
-    activeInput: new Set<string>()
+    activeInput: new Set<string>(),
+
+    displayNormals: false,
+    displayLighting: false,
   };
 
   const lockChangeAlert = () => {
@@ -57,6 +63,16 @@ export const createPlayer = (gl: WebGL2RenderingContext, atlasUrl: string): Play
       player.locked = false;
   }
   document.addEventListener('pointerlockchange', lockChangeAlert, false);
+
+  const bLighting = document.getElementById('b-lighting');
+  bLighting?.addEventListener('click', () => {
+    player.displayLighting = !player.displayLighting;
+  });
+
+  const bNormals = document.getElementById('b-normals')
+  bNormals?.addEventListener('click', () => {
+    player.displayNormals = !player.displayNormals;
+  });
 
   updateCamera(player);
 

@@ -58,12 +58,17 @@ export const renderStaticObjects = (gl: WebGL2RenderingContext, player: Player, 
     const view       = gl.getUniformLocation(v.program, "view");
     const model      = gl.getUniformLocation(v.program, "model");
 
-    gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, player.atlas);
+    const displayNormals      = gl.getUniformLocation(v.program, "displayNormals");
+    const displayLighting      = gl.getUniformLocation(v.program, "displayLighting");
 
     gl.uniformMatrix4fv(projection, false, player.projection);
     gl.uniformMatrix4fv(view, false, player.view);
     gl.uniformMatrix4fv(model, false, v.model);
+    gl.uniform1i(displayNormals, player.displayNormals ? 1 : 0);
+    gl.uniform1i(displayLighting, player.displayLighting ? 1 : 0);
+
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, player.atlas);
 
     gl.bindVertexArray(v.vao);
 

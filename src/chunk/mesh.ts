@@ -7,6 +7,7 @@ import { chunkSize } from './chunk';
 export const chunkVertexShader = `#version 300 es
 
   in vec3 v_Position;
+  in vec3 v_Normal;
   in vec2 uv_Coords;
 
   uniform mat4 projection;
@@ -14,9 +15,11 @@ export const chunkVertexShader = `#version 300 es
   uniform mat4 model;
 
   out vec2 text_coords;
+  out vec3 n_color;
 
   void main() {
     text_coords = uv_Coords;
+    n_color = v_Normal;
     gl_Position = projection * view * model * vec4(v_Position, 1.0);
   }
 
@@ -27,16 +30,24 @@ export const chunkFragmentShader = `#version 300 es
   precision highp float;
 
   in vec2 text_coords;
+  in vec3 n_color;
 
   uniform sampler2D texture_atlas;
+  uniform int displayNormals;
+  uniform int displayLighting;
 
   out vec4 frag_color;
 
   void main() {
-    frag_color = texture(texture_atlas, text_coords);
+    if(displayNormals == 1)
+      frag_color = vec4(abs(n_color.xyz), 1.0);
+    else
+      frag_color = texture(texture_atlas, text_coords);
   }
 
 `;
+
+const vertexLength = 8;
 
 export const createChunkRenderObject = (gl: WebGL2RenderingContext, program: WebGLProgram) => (pos: Vector3, mesh: Float32Array): StaticRenderObjectComponent => {
 
@@ -54,22 +65,28 @@ export const createChunkRenderObject = (gl: WebGL2RenderingContext, program: Web
   gl.bufferData(gl.ARRAY_BUFFER, mesh, gl.STATIC_DRAW);
 
   const vertexSize = 3;
+  const normalSize = 3;
   const uvSize = 2;
 
-  const stride = 4 * 5;
+  const stride = 4 * 8;
   
   const vertexOffset = 0;
-  const uvOffset = 4 * 3;
+  const normalOffset = 4 * 3;
+  const uvOffset = 6 * 4;
 
   const positionAttributeLocation = gl.getAttribLocation(program, 'v_Position');
   gl.vertexAttribPointer(positionAttributeLocation, vertexSize, gl.FLOAT, false, stride, vertexOffset);
   gl.enableVertexAttribArray(positionAttributeLocation);
 
+  const normalAttributeLocation = gl.getAttribLocation(program, 'v_Normal');
+  gl.vertexAttribPointer(normalAttributeLocation, normalSize, gl.FLOAT, false, stride, normalOffset);
+  gl.enableVertexAttribArray(normalAttributeLocation);
+
   const uvAttributeLocation = gl.getAttribLocation(program, 'uv_Coords');
   gl.vertexAttribPointer(uvAttributeLocation, uvSize, gl.FLOAT, false, stride, uvOffset);
   gl.enableVertexAttribArray(uvAttributeLocation);
 
-  const count = mesh.length / 5;
+  const count = mesh.length / vertexLength;
 
   const model = new Matrix4();
   model.identity().translate([ pos.x * chunkSize, pos.y * chunkSize, pos.z * chunkSize ]);
@@ -92,7 +109,7 @@ export const updateChunkRenderObject = (gl: WebGL2RenderingContext, program: Web
   gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
   gl.bufferData(gl.ARRAY_BUFFER, mesh, gl.STATIC_DRAW);
 
-  previous.count = mesh.length / 5;
+  previous.count = mesh.length / vertexLength;
 };
 
 import { dictionary } from './block';
@@ -119,21 +136,22 @@ export const naiveMeshing = (blockStructure: BlockStructureComponent): Float32Ar
         if(block.type != 'fullBlock' || block.type == 'none')
           continue;
 
+        const mesh = fullBlockMeshWithNormals;
 
         if(i == 0 || blockStructure[i - 1][j][k] == 0)
-          output.push(...fullBlockMesh.westFace(i, j, k, block.u, block.v))
+          output.push(...mesh.westFace(i, j, k, block.u, block.v))
         if(i == chunkSize - 1 || blockStructure[i + 1][j][k] == 0)
-          output.push(...fullBlockMesh.eastFace(i, j, k, block.u, block.v))
+          output.push(...mesh.eastFace(i, j, k, block.u, block.v))
 
         if(j == 0 || blockStructure[i][j - 1][k] == 0)
-          output.push(...fullBlockMesh.bottomFace(i, j, k, block.u, block.v))
+          output.push(...mesh.bottomFace(i, j, k, block.u, block.v))
         if(j == chunkSize - 1 || blockStructure[i][j + 1][k] == 0)
-          output.push(...fullBlockMesh.topFace(i, j, k, block.u, block.v))
+          output.push(...mesh.topFace(i, j, k, block.u, block.v))
 
         if(k == 0 || blockStructure[i][j][k - 1] == 0)
-          output.push(...fullBlockMesh.southFace(i, j, k, block.u, block.v))
+          output.push(...mesh.southFace(i, j, k, block.u, block.v))
         if(k == chunkSize - 1 || blockStructure[i][j][k + 1] == 0)
-          output.push(...fullBlockMesh.northFace(i, j, k, block.u, block.v))
+          output.push(...mesh.northFace(i, j, k, block.u, block.v))
 
       }
     }
@@ -197,5 +215,63 @@ export const fullBlockMesh = {
     0.0 + x, 0.0 + y, 0.0 + z, u, v,
     1.0 + x, 0.0 + y, 1.0 + z, u + 0.0625, v + 0.0625,
     0.0 + x, 0.0 + y, 1.0 + z, u, v + 0.0625
+  ]),
+};
+
+// TODO: replace 0.0625 with texel dimensions
+export const fullBlockMeshWithNormals = {
+
+  southFace: (x, y, z, u, v) => ([
+    0.0 + x, 0.0 + y, 0.0 + z, 0.0, 0.0, -1.0, u, v,
+    1.0 + x, 1.0 + y, 0.0 + z, 0.0, 0.0, -1.0, u + 0.0625, v + 0.0625,
+    1.0 + x, 0.0 + y, 0.0 + z, 0.0, 0.0, -1.0, u + 0.0625, v,
+    0.0 + x, 0.0 + y, 0.0 + z, 0.0, 0.0, -1.0, u, v,
+    0.0 + x, 1.0 + y, 0.0 + z, 0.0, 0.0, -1.0, u, v + 0.0625,
+    1.0 + x, 1.0 + y, 0.0 + z, 0.0, 0.0, -1.0, u + 0.0625, v + 0.0625
+  ]),
+
+  northFace: (x, y, z, u, v) => ([
+    0.0 + x, 0.0 + y, 1.0 + z, 0.0, 0.0, 1.0, u, v,
+    1.0 + x, 0.0 + y, 1.0 + z, 0.0, 0.0, 1.0, u, v + 0.0625,
+    1.0 + x, 1.0 + y, 1.0 + z, 0.0, 0.0, 1.0, u + 0.0625, v + 0.0625,
+    0.0 + x, 0.0 + y, 1.0 + z, 0.0, 0.0, 1.0, u, v,
+    1.0 + x, 1.0 + y, 1.0 + z, 0.0, 0.0, 1.0, u + 0.0625, v + 0.0625,
+    0.0 + x, 1.0 + y, 1.0 + z, 0.0, 0.0, 1.0, u, v + 0.0625
+  ]),
+
+  westFace: (x, y, z, u, v) => ([
+    0.0 + x, 0.0 + y, 0.0 + z, -1.0, 0.0, 0.0, u, v,
+    0.0 + x, 0.0 + y, 1.0 + z, -1.0, 0.0, 0.0, u, v + 0.0625,
+    0.0 + x, 1.0 + y, 1.0 + z, -1.0, 0.0, 0.0, u + 0.0625, v + 0.0625,
+    0.0 + x, 0.0 + y, 0.0 + z, -1.0, 0.0, 0.0, u, v,
+    0.0 + x, 1.0 + y, 1.0 + z, -1.0, 0.0, 0.0, u + 0.0625, v + 0.0625,
+    0.0 + x, 1.0 + y, 0.0 + z, -1.0, 0.0, 0.0, u + 0.0625, v
+  ]),
+
+  eastFace: (x, y, z, u, v) => ([
+    1.0 + x, 0.0 + y, 0.0 + z, 1.0, 0.0, 0.0, u, v,
+    1.0 + x, 1.0 + y, 0.0 + z, 1.0, 0.0, 0.0, u + 0.0625, v,
+    1.0 + x, 1.0 + y, 1.0 + z, 1.0, 0.0, 0.0, u + 0.0625, v + 0.0625,
+    1.0 + x, 0.0 + y, 0.0 + z, 1.0, 0.0, 0.0, u, v,
+    1.0 + x, 1.0 + y, 1.0 + z, 1.0, 0.0, 0.0, u + 0.0625, v + 0.0625,
+    1.0 + x, 0.0 + y, 1.0 + z, 1.0, 0.0, 0.0, u, v + 0.0625 
+  ]),
+
+  topFace: (x, y, z, u, v) => ([
+    0.0 + x, 1.0 + y, 0.0 + z, 0.0, 1.0, 0.0, u, v,
+    1.0 + x, 1.0 + y, 1.0 + z, 0.0, 1.0, 0.0, u + 0.0625, v + 0.0625,
+    1.0 + x, 1.0 + y, 0.0 + z, 0.0, 1.0, 0.0, u + 0.0625, v,
+    0.0 + x, 1.0 + y, 0.0 + z, 0.0, 1.0, 0.0, u, v,
+    0.0 + x, 1.0 + y, 1.0 + z, 0.0, 1.0, 0.0, u, v + 0.0625,
+    1.0 + x, 1.0 + y, 1.0 + z, 0.0, 1.0, 0.0, u + 0.0625, v + 0.0625
+  ]),
+
+  bottomFace: (x, y, z, u, v) => ([
+    0.0 + x, 0.0 + y, 0.0 + z, 0.0, -1.0, 0.0, u, v,
+    1.0 + x, 0.0 + y, 0.0 + z, 0.0, -1.0, 0.0, u + 0.0625, v,
+    1.0 + x, 0.0 + y, 1.0 + z, 0.0, -1.0, 0.0, u + 0.0625, v + 0.0625,
+    0.0 + x, 0.0 + y, 0.0 + z, 0.0, -1.0, 0.0, u, v,
+    1.0 + x, 0.0 + y, 1.0 + z, 0.0, -1.0, 0.0, u + 0.0625, v + 0.0625,
+    0.0 + x, 0.0 + y, 1.0 + z, 0.0, -1.0, 0.0, u, v + 0.0625
   ]),
 };
