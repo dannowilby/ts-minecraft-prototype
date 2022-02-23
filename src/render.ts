@@ -47,10 +47,12 @@ export const renderStaticObjects = (gl: WebGL2RenderingContext, player: Player, 
 
   components.staticRenderObjects.forEach((v, k) => {
 
+    /*
     if(k.split("-")[0] != "chu") {
       console.log(`Not a chunk, skipping: ${k}`);
       return;
     }
+    */
     
     gl.useProgram(v.program);
     
@@ -61,18 +63,24 @@ export const renderStaticObjects = (gl: WebGL2RenderingContext, player: Player, 
     const displayNormals      = gl.getUniformLocation(v.program, "displayNormals");
     const displayLighting      = gl.getUniformLocation(v.program, "displayLighting");
 
+    const pointLight      = gl.getUniformLocation(v.program, "pointLight");
+
     gl.uniformMatrix4fv(projection, false, player.projection);
     gl.uniformMatrix4fv(view, false, player.view);
     gl.uniformMatrix4fv(model, false, v.model);
     gl.uniform1i(displayNormals, player.displayNormals ? 1 : 0);
     gl.uniform1i(displayLighting, player.displayLighting ? 1 : 0);
 
+    gl.uniform3fv(pointLight, player.pointLight);
+
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, player.atlas);
 
     gl.bindVertexArray(v.vao);
-
-    gl.drawArrays(gl.TRIANGLES, 0, v.count);
+    if(!v.displayWireframe)
+      gl.drawArrays(gl.TRIANGLES, 0, v.count);
+    else
+      gl.drawArrays(gl.LINES, 0, v.count);
   });
 
 }
@@ -126,5 +134,4 @@ export const loadTexture = (gl: WebGL2RenderingContext, url: string): WebGLTextu
 
   return texture;
 }
-
 

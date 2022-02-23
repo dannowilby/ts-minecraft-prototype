@@ -1,21 +1,37 @@
 
+import { Vector3 } from '@math.gl/core';
 import { Entity, Components, BlockStructureComponent } from './state';
 import { createChunk, chunkSize } from './chunk/chunk';
 import { initShaders } from './render';
 import { chunkVertexShader, chunkFragmentShader } from './chunk/mesh';
 import { generateEmptyChunk } from './chunk/chunk';
 
+import { createChunkRenderObject, fullBlockMeshWithNormals } from './chunk/mesh';
 export const initMaze = (gl: WebGL2RenderingContext, entities: Entity[], components: Components) => {
 
   const program = initShaders(gl, chunkVertexShader, chunkFragmentShader);
 
+  const id = `pointLight`;
+  entities.push({ id, components: [ "staticRenderObjects" ] });
+  const mesh = fullBlockMeshWithNormals;
+  components["staticRenderObjects"].set(id, createChunkRenderObject(gl, program)(
+    new Vector3(0,1,0),
+    new Float32Array([
+      ...mesh.northFace(0, 0, 0, 0, 0),
+      ...mesh.southFace(0, 0, 0, 0, 0),
+      ...mesh.eastFace(0, 0, 0, 0, 0),
+      ...mesh.westFace(0, 0, 0, 0, 0),
+      ...mesh.topFace(0, 0, 0, 0, 0),
+      ...mesh.bottomFace(0, 0, 0, 0, 0),
+    ])
+  ));
+  components["staticRenderObjects"].get(id).displayWireframe = true;
+
   const arenaSize = 4;
 
-  for(let i = 0; i < arenaSize; i++) {
-    for(let j = 0; j < arenaSize; j++) {
+  for(let i = 0; i < arenaSize; i++)
+    for(let j = 0; j < arenaSize; j++)
       createChunk(gl, program, entities, components)(i, 0, j, generateMazeChunk());
-    }
-  }
 }
 
 // you can design your own maze wallmap, however I created a function which makes one

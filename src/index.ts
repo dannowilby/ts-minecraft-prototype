@@ -135,6 +135,8 @@ const init = (gl: WebGL2RenderingContext) => {
   const systems    = createSystems();
 
   initMaze(gl, entities, components);
+  const plpos = player.pointLight;
+  components.staticRenderObjects.get('pointLight')?.model.identity().translate([ plpos.x - 0.5, plpos.y - 0.5, plpos.z - 0.5 ]);
 
   addSystem(systems, "render", renderStaticObjects);
   addSystem(systems, "input",  freeCameraInput);

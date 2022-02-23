@@ -14,12 +14,17 @@ export const chunkVertexShader = `#version 300 es
   uniform mat4 view;
   uniform mat4 model;
 
+  uniform vec3 pointLight;
+
   out vec2 text_coords;
   out vec3 n_color;
+  out vec3 surfaceToLight;
 
   void main() {
     text_coords = uv_Coords;
     n_color = v_Normal;
+    vec3 v_surface = vec3((model * vec4(v_Position, 1.0)).xyz);
+    surfaceToLight = pointLight - v_surface;
     gl_Position = projection * view * model * vec4(v_Position, 1.0);
   }
 
@@ -32,6 +37,8 @@ export const chunkFragmentShader = `#version 300 es
   in vec2 text_coords;
   in vec3 n_color;
 
+  in vec3 surfaceToLight;
+
   uniform sampler2D texture_atlas;
   uniform int displayNormals;
   uniform int displayLighting;
@@ -39,10 +46,18 @@ export const chunkFragmentShader = `#version 300 es
   out vec4 frag_color;
 
   void main() {
+
+    float intensity = 0.5;
+    float lighting = min(1.0, dot(n_color, surfaceToLight) * intensity); // may have to replace this
+
     if(displayNormals == 1)
       frag_color = vec4(abs(n_color.xyz), 1.0);
     else
-      frag_color = texture(texture_atlas, text_coords);
+      if(displayLighting == 1)
+        frag_color = vec4(lighting * texture(texture_atlas, text_coords).xyz, 1.0);
+      else
+        frag_color = texture(texture_atlas, text_coords);
+
   }
 
 `;
@@ -96,7 +111,8 @@ export const createChunkRenderObject = (gl: WebGL2RenderingContext, program: Web
     vbo,
     program,
     model,
-    count
+    count,
+    wireframe: false,
   };
 };
 

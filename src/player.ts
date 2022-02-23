@@ -22,6 +22,8 @@ export type Player = {
 
   displayNormals: boolean,
   displayLighting: boolean,
+
+  pointLight: Vector3,
 };
 
 export const projectionMatrix = (w: number, h: number): Matrix4 => (
@@ -53,7 +55,9 @@ export const createPlayer = (gl: WebGL2RenderingContext, atlasUrl: string): Play
     activeInput: new Set<string>(),
 
     displayNormals: false,
-    displayLighting: false,
+    displayLighting: true,
+
+    pointLight: new Vector3(5.5, 6.5, 5.5),
   };
 
   const lockChangeAlert = () => {
