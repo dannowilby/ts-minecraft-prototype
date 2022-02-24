@@ -63,7 +63,7 @@ const main = () => {
   let frames = 0;
   let times = 0;
   setInterval(() => {
-    // console.log(fps); // uncomment to print fps in the console
+    console.log(`FPS = ${fps}`); // uncomment to print fps in the console
     frames = 0;
     times = 0;
   }, 1000);
@@ -101,7 +101,8 @@ Controls mimic minecraft creative mode,
 just click in the window and then you 
 should be able to fly around. Left clicking 
 will remove blocks in front of you, up to 5 
-blocks away.
+blocks away. Also right click will add a block
+of dirt.
 
 The arena is generated randomly each time, 
 so it'll be different if you refresh the page.

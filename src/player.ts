@@ -136,6 +136,28 @@ const rayTrace = (entities: Entity[], components: Components, player: Player) =>
 
 };
 
+const rayTraceBefore = (entities: Entity[], components: Components, player: Player) => (stepValue: number, numSteps: number) => (onHit: (pos: Vector3) => void) => {
+
+  const step = multiplyAndDestructVector3(player.direction, stepValue);
+  const ray = new Vector3(player.position.x, player.position.y, player.position.z);
+
+  for(let i = 0; i < numSteps; i++) {
+    
+    if(getBlock(entities, components)(ray) != 0) {
+      ray.x = ray.x - step[0];
+      ray.y = ray.y - step[1];
+      ray.z = ray.z - step[2];
+      onHit(ray);
+      return;
+    }
+
+    ray.x = ray.x + step[0];
+    ray.y = ray.y + step[1];
+    ray.z = ray.z + step[2];
+  }
+
+};
+
 export const freeCameraInput = (gl: WebGL2RenderingContext, player: Player, entities: Entity[], components: Components, delta: number) => {
 
   const speed = 10;
@@ -180,10 +202,20 @@ export const freeCameraInput = (gl: WebGL2RenderingContext, player: Player, enti
 
   document.onclick = (e) => {
 
+    if(e.button == 0)
     rayTrace(entities, components, player)(0.05, 100)((pos: Vector3) => {
       setBlock(entities, components)(pos, 0);
       updateChunk(gl, entities, components)(pos);
     });
+    if(e.button == 2)
+    rayTraceBefore(entities, components, player)(0.05, 100)((pos: Vector3) => {
+      setBlock(entities, components)(pos, 1);
+      updateChunk(gl, entities, components)(pos);
+    });
+  }
+
+  document.oncontextmenu = (e) => {
+
   }
 
   updateCamera(player);
