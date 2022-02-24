@@ -15,16 +15,19 @@ export const chunkVertexShader = `#version 300 es
   uniform mat4 model;
 
   uniform vec3 pointLight;
+  uniform vec3 playerPos;
 
   out vec2 text_coords;
   out vec3 n_color;
   out vec3 surfaceToLight;
+  out vec3 surfaceToCamera;
 
   void main() {
     text_coords = uv_Coords;
     n_color = v_Normal;
     vec3 v_surface = vec3((model * vec4(v_Position, 1.0)).xyz);
     surfaceToLight = pointLight - v_surface;
+    surfaceToCamera = playerPos - v_surface;
     gl_Position = projection * view * model * vec4(v_Position, 1.0);
   }
 
@@ -38,6 +41,7 @@ export const chunkFragmentShader = `#version 300 es
   in vec3 n_color;
 
   in vec3 surfaceToLight;
+  in vec3 surfaceToCamera;
 
   uniform sampler2D texture_atlas;
   uniform int displayNormals;
@@ -48,15 +52,28 @@ export const chunkFragmentShader = `#version 300 es
   void main() {
 
     float intensity = 0.5;
-    float lighting = min(1.0, dot(n_color, surfaceToLight) * intensity); // may have to replace this
+
+    vec3 text = texture(texture_atlas, text_coords).xyz;
+
+    vec3 normals = normalize(n_color);
+    vec3 lightDir = normalize(surfaceToLight);
+    vec3 viewDir = normalize(surfaceToCamera);
+
+    vec3 reflectDir = reflect(-lightDir, normals);
+
+    vec3 ambient = vec3(0.5, 0.5, 0.5);
+    vec3 diffuse = max(0.0, dot(normals, lightDir)) * vec3(1.0, 1.0, 1.0);
+    vec3 specular = pow(max(0.0, dot(reflectDir, viewDir)), 64.0) * vec3(1.0, 1.0, 1.0);
+
+    vec3 lighting = (ambient + diffuse + specular) * text;
 
     if(displayNormals == 1)
       frag_color = vec4(abs(n_color.xyz), 1.0);
     else
       if(displayLighting == 1)
-        frag_color = vec4(lighting * texture(texture_atlas, text_coords).xyz, 1.0);
+        frag_color = vec4(lighting, 1.0);
       else
-        frag_color = texture(texture_atlas, text_coords);
+        frag_color = vec4(text, 1.0);
 
   }
 
