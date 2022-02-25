@@ -16,17 +16,20 @@ export const chunkVertexShader = `#version 300 es
 
   uniform vec3 pointLight;
   uniform vec3 playerPos;
+  uniform vec3 spotLight;
 
   out vec2 text_coords;
   out vec3 n_color;
   out vec3 surfaceToLight;
   out vec3 surfaceToCamera;
+  out vec3 surfaceToSpotLight;
 
   void main() {
     text_coords = uv_Coords;
     n_color = v_Normal;
     vec3 v_surface = vec3((model * vec4(v_Position, 1.0)).xyz);
     surfaceToLight = pointLight - v_surface;
+    surfaceToSpotLight = spotLight - v_surface;
     surfaceToCamera = playerPos - v_surface;
     gl_Position = projection * view * model * vec4(v_Position, 1.0);
   }
@@ -42,10 +45,14 @@ export const chunkFragmentShader = `#version 300 es
 
   in vec3 surfaceToLight;
   in vec3 surfaceToCamera;
+  in vec3 surfaceToSpotLight;
 
   uniform sampler2D texture_atlas;
   uniform int displayNormals;
   uniform int displayLighting;
+  uniform int displayPointLight;
+  uniform int displaySpotLight;
+  uniform vec3 spotLightDirection;
 
   out vec4 frag_color;
 
@@ -58,6 +65,7 @@ export const chunkFragmentShader = `#version 300 es
     vec3 normals = normalize(n_color);
     vec3 lightDir = normalize(surfaceToLight);
     vec3 viewDir = normalize(surfaceToCamera);
+    vec3 spotLightDir = normalize(surfaceToSpotLight);
 
     vec3 reflectDir = reflect(-lightDir, normals);
 
@@ -65,13 +73,32 @@ export const chunkFragmentShader = `#version 300 es
     vec3 diffuse = max(0.0, dot(normals, lightDir)) * vec3(1.0, 1.0, 1.0);
     vec3 specular = pow(max(0.0, dot(reflectDir, viewDir)), 64.0) * vec3(1.0, 1.0, 1.0);
 
-    vec3 lighting = (ambient + diffuse + specular) * text;
+    float spotLightCoverage = dot(-spotLightDirection, spotLightDir);
+
+    float multiplier = 0.0;
+    // ~50deg
+    if(spotLightCoverage >= 0.875) {
+      float mult = normalize(dot(surfaceToSpotLight, normals));
+      if(mult > 0.0)
+        multiplier = 0.5;
+    }
+
+    vec3 lighting = vec3(0.0, 0.0, 0.0);
+
+    vec3 spotLighting = (multiplier * (ambient + diffuse + specular)) * text;
+    vec3 pointLighting = (ambient + diffuse + specular) * text;
+
+    if(displaySpotLight == 1)
+      lighting += spotLighting;
+    if(displayPointLight == 1)
+      lighting += pointLighting;
 
     if(displayNormals == 1)
       frag_color = vec4(abs(n_color.xyz), 1.0);
     else
-      if(displayLighting == 1)
+      if(displayLighting == 1) {
         frag_color = vec4(lighting, 1.0);
+      }
       else
         frag_color = vec4(text, 1.0);
 

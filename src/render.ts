@@ -62,18 +62,28 @@ export const renderStaticObjects = (gl: WebGL2RenderingContext, player: Player, 
 
     const displayNormals      = gl.getUniformLocation(v.program, "displayNormals");
     const displayLighting      = gl.getUniformLocation(v.program, "displayLighting");
+    const displaySpotLight      = gl.getUniformLocation(v.program, "displaySpotLight");
+    const displayPointLight     = gl.getUniformLocation(v.program, "displayPointLight");
 
     const playerPos      = gl.getUniformLocation(v.program, "playerPos");
     const pointLight      = gl.getUniformLocation(v.program, "pointLight");
+
+    const spotLight      = gl.getUniformLocation(v.program, "spotLight");
+    const spotLightDirection      = gl.getUniformLocation(v.program, "spotLightDirection");
 
     gl.uniformMatrix4fv(projection, false, player.projection);
     gl.uniformMatrix4fv(view, false, player.view);
     gl.uniformMatrix4fv(model, false, v.model);
     gl.uniform1i(displayNormals, player.displayNormals ? 1 : 0);
     gl.uniform1i(displayLighting, player.displayLighting ? 1 : 0);
+    gl.uniform1i(displaySpotLight, player.displaySpotLight ? 1 : 0);
+    gl.uniform1i(displayPointLight, player.displayPointLight ? 1 : 0);
 
     gl.uniform3fv(pointLight, player.pointLight);
     gl.uniform3fv(playerPos, player.position);
+
+    gl.uniform3fv(spotLight, player.spotLight);
+    gl.uniform3fv(spotLightDirection, player.spotLightDirection);
 
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, player.atlas);

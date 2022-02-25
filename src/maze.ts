@@ -27,6 +27,21 @@ export const initMaze = (gl: WebGL2RenderingContext, entities: Entity[], compone
   ));
   components["staticRenderObjects"].get(id).displayWireframe = true;
 
+  const id1 = `spotLight`;
+  entities.push({ id: id1, components: [ "staticRenderObjects" ] });
+  components["staticRenderObjects"].set(id1, createChunkRenderObject(gl, program)(
+    new Vector3(0,1,0),
+    new Float32Array([
+      ...mesh.northFace(0, 0, 0, 0, 0),
+      ...mesh.southFace(0, 0, 0, 0, 0),
+      ...mesh.eastFace(0, 0, 0, 0, 0),
+      ...mesh.westFace(0, 0, 0, 0, 0),
+      ...mesh.topFace(0, 0, 0, 0, 0),
+      ...mesh.bottomFace(0, 0, 0, 0, 0),
+    ])
+  ));
+  components["staticRenderObjects"].get(id1).displayWireframe = true;
+
   const arenaSize = 4;
 
   for(let i = 0; i < arenaSize; i++)

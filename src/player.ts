@@ -22,8 +22,12 @@ export type Player = {
 
   displayNormals: boolean,
   displayLighting: boolean,
+  displaySpotLight: boolean,
+  displayPointLight: boolean,
 
   pointLight: Vector3,
+  spotLight: Vector3,
+  spotLightDirection: Vector3,
 };
 
 export const projectionMatrix = (w: number, h: number): Matrix4 => (
@@ -56,8 +60,13 @@ export const createPlayer = (gl: WebGL2RenderingContext, atlasUrl: string): Play
 
     displayNormals: false,
     displayLighting: true,
+    displayPointLight: true,
+    displaySpotLight: true,
 
     pointLight: new Vector3(5.5, 6.5, 5.5),
+
+    spotLight: new Vector3(1.5, 5.5, 1.5),
+    spotLightDirection: new Vector3(0, -1, 0),
   };
 
   const lockChangeAlert = () => {
@@ -76,6 +85,16 @@ export const createPlayer = (gl: WebGL2RenderingContext, atlasUrl: string): Play
   const bNormals = document.getElementById('b-normals')
   bNormals?.addEventListener('click', () => {
     player.displayNormals = !player.displayNormals;
+  });
+
+  const bSL = document.getElementById('b-spot-light');
+  bSL?.addEventListener('click', () => {
+    player.displaySpotLight = !player.displaySpotLight;
+  });
+
+  const bPL = document.getElementById('b-point-light')
+  bPL?.addEventListener('click', () => {
+    player.displayPointLight = !player.displayPointLight;
   });
 
   updateCamera(player);
