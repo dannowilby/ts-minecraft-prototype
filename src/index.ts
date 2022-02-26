@@ -63,7 +63,7 @@ const main = () => {
   let frames = 0;
   let times = 0;
   setInterval(() => {
-    console.log(`FPS = ${fps}`); // uncomment to print fps in the console
+    // console.log(`FPS = ${fps}`); // uncomment to print fps in the console
     frames = 0;
     times = 0;
   }, 1000);

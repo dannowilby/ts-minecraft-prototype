@@ -7,9 +7,19 @@ import { chunkVertexShader, chunkFragmentShader } from './chunk/mesh';
 import { generateEmptyChunk } from './chunk/chunk';
 
 import { createChunkRenderObject, fullBlockMeshWithNormals } from './chunk/mesh';
+import { icosahedron, subdivide } from './sphere';
 export const initMaze = (gl: WebGL2RenderingContext, entities: Entity[], components: Components) => {
 
   const program = initShaders(gl, chunkVertexShader, chunkFragmentShader);
+
+  const icos = `icosahedron`;
+  entities.push({ id: icos, components: [ "staticRenderObjects" ] });
+  const icosahedronMesh = subdivide(subdivide(subdivide(icosahedron(), 8), 8), 8);
+  components["staticRenderObjects"].set(icos, createChunkRenderObject(gl, program)(
+    new Vector3(0,1,0),
+    new Float32Array(icosahedronMesh)
+  ));
+
 
   const id = `pointLight`;
   entities.push({ id, components: [ "staticRenderObjects" ] });
