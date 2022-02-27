@@ -101,8 +101,7 @@ Controls mimic minecraft creative mode,
 just click in the window and then you 
 should be able to fly around. Left clicking 
 will remove blocks in front of you, up to 5 
-blocks away. Also right click will add a block
-of dirt.
+blocks away. 
 
 The arena is generated randomly each time, 
 so it'll be different if you refresh the page.
@@ -123,6 +122,15 @@ from The Painterly Pack: http://painterlypack.net/.
 
 I've also uploaded this project to my github incase 
 I decide to work on it further.
+
+
+Some updates/notes since I last submitted this:
+I added block placing with right click. The spot light
+intensity has been turned down because otherwise the
+light was making the textures washed out. It can be turned
+up in the shader by tweaking the 'multiplier' variable in
+the fragment shader when doing the calculation to check
+if the fragment is within the cone.
 `;
 const init = (gl: WebGL2RenderingContext) => {
 
@@ -143,7 +151,27 @@ const init = (gl: WebGL2RenderingContext) => {
 
   addSystem(systems, "render", renderStaticObjects);
   addSystem(systems, "input",  freeCameraInput);
+  addSystem(systems, "tick", updatePointLight);
 
   return { player, entities, components, systems };
 }
 
+
+let dir = 1.0;
+const updatePointLight = (gl: WebGL2RenderingContext, player: Player, entities: Entity[], components: Components, delta: number) => {
+
+  const pl = player.pointLight;
+  const lowerLimit = 5.0, upperLimit = 9.0;
+
+  if(pl.x < lowerLimit)
+    dir = 1;
+  if(pl.x > upperLimit)
+    dir = -1;
+
+  const move = dir * delta;
+
+  pl.x += move;
+
+  components.staticRenderObjects.get('pointLight')?.model.translate([ move, 0, 0 ]);
+
+}

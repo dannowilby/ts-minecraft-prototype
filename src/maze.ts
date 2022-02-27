@@ -16,7 +16,7 @@ export const initMaze = (gl: WebGL2RenderingContext, entities: Entity[], compone
   entities.push({ id: icos, components: [ "staticRenderObjects" ] });
   const icosahedronMesh = subdivide(subdivide(subdivide(icosahedron(), 8), 8), 8);
   components["staticRenderObjects"].set(icos, createChunkRenderObject(gl, program)(
-    new Vector3(0,1,0),
+    new Vector3(1,1,1),
     new Float32Array(icosahedronMesh)
   ));
 

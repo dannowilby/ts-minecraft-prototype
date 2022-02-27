@@ -84,13 +84,13 @@ export const chunkFragmentShader = `#version 300 es
     if(spotLightCoverage >= 0.875) {
       float mult = normalize(dot(surfaceToSpotLight, normals));
       if(mult > 0.0)
-        multiplier = 1.0;
+        multiplier = 0.25;
     }
 
     vec3 lighting = vec3(0.0, 0.0, 0.0);
 
     vec3 spotLighting = (multiplier * (ambient + diffuse1 + specular1)) * text;
-    vec3 pointLighting = (1.0 - multiplier) * (ambient + diffuse + specular) * text;
+    vec3 pointLighting = (ambient + diffuse + specular) * text;
 
     if(displaySpotLight == 1)
       lighting += spotLighting;
