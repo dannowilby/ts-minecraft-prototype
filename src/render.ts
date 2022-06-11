@@ -1,9 +1,6 @@
 
 import { Vector3, Matrix4 } from '@math.gl/core';
 
-import { Player } from './player';
-import { Entity, Components, StaticRenderObjectComponent } from './state';
-
 export const initShaders = (gl: WebGL2RenderingContext, vshader: string, fshader: string): WebGLProgram => {
 
   const program = gl.createProgram();
@@ -41,35 +38,6 @@ const compileShader = (gl: WebGL2RenderingContext, source: string, type: number)
     throw new Error(`Could not compile shader: ${gl.getShaderInfoLog(shader)}`);
 
   return shader;
-}
-
-export const renderStaticObjects = (gl: WebGL2RenderingContext, player: Player, entities: Entity[], components: Components, delta: number) => {
-
-  components.staticRenderObjects.forEach((v, k) => {
-
-    if(k.split("-")[0] != "chu") {
-      console.log(`Not a chunk, skipping: ${k}`);
-      return;
-    }
-    
-    gl.useProgram(v.program);
-    
-    const projection = gl.getUniformLocation(v.program, "projection");
-    const view       = gl.getUniformLocation(v.program, "view");
-    const model      = gl.getUniformLocation(v.program, "model");
-
-    gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, player.atlas);
-
-    gl.uniformMatrix4fv(projection, false, player.projection);
-    gl.uniformMatrix4fv(view, false, player.view);
-    gl.uniformMatrix4fv(model, false, v.model);
-
-    gl.bindVertexArray(v.vao);
-
-    gl.drawArrays(gl.TRIANGLES, 0, v.count);
-  });
-
 }
 
 /*

@@ -1,89 +1,76 @@
 
-import { Matrix4 } from '@math.gl/core';
-
+/**
 import { createEntities, createComponents, Components, Entity, StaticRenderObjectComponent } from './state';
 import { createSystems, addSystem, dispatch_event, System } from './system';
 import { createPlayer, Player, projectionMatrix, freeCameraInput } from './player';
 import { renderStaticObjects } from './render';
+*/
 
-const canvasWidth = 800;
-const canvasHeight = 500;
+import { State, Event, dispatch } from './engine/state';
+import { ECState, createECState } from './engine/ec';
+import { createProfiler, updateProfiler, start, end } from './engine/profiler';
+import { createWindow } from './engine/window';
 
-const create = (): WebGL2RenderingContext => {
+const captureInput = (state: State): State => {
+  window.onkeyup = (e: KeyboardEvent) => {
+    state.activeInput.delete(e.key.toLowerCase());
+  }
 
-  const canvas = document.createElement('canvas');
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-  canvas.style.display = "block";
-  canvas.style.margin = "auto";
+  window.onkeydown = (e: KeyboardEvent) => { // might want to check if locked
+    state.activeInput.add(e.key.toLowerCase());
+  }
 
-  canvas.onclick = () => {
-    canvas.requestPointerLock();
-  };
+  document.onmousemove = (e) => {
+      state.mouseMovement = [ e.movementX, e.movementY ];
+  }
 
-  document.body.appendChild(canvas);
-
-  const gl = canvas.getContext("webgl2");
-
-  if(!gl)
-    throw new Error("Webgl couldn't instanciate");
-
-
-  // baby blue clear color for a basic skybox
-  gl.clearColor(0.537, 0.811, 0.941, 1.0);
-  gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
-
-  gl.enable(gl.DEPTH_TEST);
-  gl.enable(gl.CULL_FACE);
-  gl.cullFace(gl.BACK);
-
-  return gl;
-};
-
-const onResize = (gl: WebGLRenderingContext, player: Player) => () => {
-  const w = window.innerWidth, h = window.innerHeight;
-  
-  gl.canvas.width = w;
-  gl.canvas.height = h;
-  gl.viewport(0, 0, w, h);
-  
-  player.projection = projectionMatrix(w, h);
+  return state;
 }
 
-let fps = 0;
 const main = () => {
 
-  const gl = create();
+  const gl = createWindow();
+  let profiler = createProfiler(true); // boolean parameter: print or not
   
-  const { player, entities, components, systems } = init(gl);
-  const dispatch = dispatch_event(gl)(player, entities, components, systems);
-
-  window.onresize = onResize(gl, player);
-
-  let frames = 0;
-  let times = 0;
-  setInterval(() => {
-    // console.log(fps); // uncomment to print fps in the console
-    frames = 0;
-    times = 0;
-  }, 1000);
+  let state: State = create(gl);
+  state = captureInput(state);
 
   let previousTime = -1;
   const gameloop = (time: number) => {
     
     gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
     
+    // calc delta
     if(previousTime == -1)
       previousTime = time;
     const delta = (time - previousTime) * 0.001; // in seconds
 
-    dispatch("input",  delta);
-    dispatch("tick",   delta);
-    dispatch("render", delta);
+    const lockChangeAlert = () => {
+      if (document.pointerLockElement === gl.canvas)
+        state.lock = true;
+      else
+        state.lock = false;
+    }
+    document.addEventListener('pointerlockchange', lockChangeAlert, false);
 
-    times = times + delta;
-    frames = frames + 1;
-    fps = frames / times;
+    // flush events, need to figure a way to pass event data/how to structure event data
+    while(state.queue.length != 0) {
+      const event = state.queue.shift();
+
+      if(event === undefined)
+        continue;
+
+      state = dispatch(gl, state, event.type, delta)(event.data);
+    }
+
+    // update frame
+    state = dispatch(gl, state, "input",  delta)(null);
+    state = dispatch(gl, state, "tick",   delta)(null);
+
+    // profile this
+    state = dispatch(gl, state, "render", delta)(null);
+
+    profiler = updateProfiler(profiler, delta);
 
     previousTime = time;
     requestAnimationFrame(gameloop);
@@ -93,7 +80,30 @@ const main = () => {
 };
 window.addEventListener('load', main);
 
-import { initMaze } from './maze';
+import { init } from './example/index';
+
+const create = (gl: WebGL2RenderingContext) => {
+
+  // console.log(description);
+
+  /*
+  const atlas = "atlas.png";
+  const player = createPlayer(gl, atlas);
+
+  const entities   = createEntities();
+  const components = createComponents();
+  const systems    = createSystems();
+
+  initMaze(gl, entities, components);
+
+  addSystem(systems, "render", renderStaticObjects);
+  addSystem(systems, "input",  freeCameraInput);
+  */
+
+  return init(gl);
+}
+
+// The following was before the complete rewrite
 const description = `
 Some info about my project:
 
@@ -123,22 +133,3 @@ from The Painterly Pack: http://painterlypack.net/.
 I've also uploaded this project to my github incase 
 I decide to work on it further.
 `;
-const init = (gl: WebGL2RenderingContext) => {
-
-  console.log(description);
-
-  const atlas = "atlas.png";
-  const player = createPlayer(gl, atlas);
-
-  const entities   = createEntities();
-  const components = createComponents();
-  const systems    = createSystems();
-
-  initMaze(gl, entities, components);
-
-  addSystem(systems, "render", renderStaticObjects);
-  addSystem(systems, "input",  freeCameraInput);
-
-  return { player, entities, components, systems };
-}
-

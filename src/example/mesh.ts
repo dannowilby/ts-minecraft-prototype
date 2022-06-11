@@ -1,44 +1,36 @@
 
 import { Vector3, Matrix4 } from '@math.gl/core';
 
-import { BlockStructureComponent, StaticRenderObjectComponent } from '../state';
-import { chunkSize } from './chunk'; 
+import { ChunkFactory } from './chunk';
+import { RenderObject } from './components/chunk';
 
 export const chunkVertexShader = `#version 300 es
-
   in vec3 v_Position;
   in vec2 uv_Coords;
-
   uniform mat4 projection;
   uniform mat4 view;
   uniform mat4 model;
-
   out vec2 text_coords;
-
   void main() {
     text_coords = uv_Coords;
     gl_Position = projection * view * model * vec4(v_Position, 1.0);
   }
-
 `;
 
 export const chunkFragmentShader = `#version 300 es
-
   precision highp float;
-
   in vec2 text_coords;
-
   uniform sampler2D texture_atlas;
-
   out vec4 frag_color;
-
   void main() {
     frag_color = texture(texture_atlas, text_coords);
   }
-
 `;
 
-export const createChunkRenderObject = (gl: WebGL2RenderingContext, program: WebGLProgram) => (pos: Vector3, mesh: Float32Array): StaticRenderObjectComponent => {
+export const createChunkRenderObject = (gl: WebGL2RenderingContext, chunkFactory: ChunkFactory, pos: Vector3, mesh: Float32Array): RenderObject => {
+
+  const chunkSize = chunkFactory.chunkSize;
+  const program = chunkFactory.program;
 
   const vao = gl.createVertexArray();
   const vbo = gl.createBuffer();
@@ -75,14 +67,17 @@ export const createChunkRenderObject = (gl: WebGL2RenderingContext, program: Web
   model.identity().translate([ pos.x * chunkSize, pos.y * chunkSize, pos.z * chunkSize ]);
 
   return {
+    lod: 0,
     vao,
-    vbo,
     program,
     model,
-    count
+    vertexCount: count,
+
+    wireframe: false
   };
 };
 
+/*
 export const updateChunkRenderObject = (gl: WebGL2RenderingContext, program: WebGLProgram) => (previous: StaticRenderObjectComponent, mesh: Float32Array) => {
 
   const { vao, vbo, program, model, count } = previous;
@@ -94,45 +89,51 @@ export const updateChunkRenderObject = (gl: WebGL2RenderingContext, program: Web
 
   previous.count = mesh.length / 5;
 };
-
-import { dictionary } from './block';
+*/
 
 // pass in all the block data and then return the vertex array
 // In the future may implement a greedy algorithm to cut down on
 // vertex count
 // This sets the vertices/textures/ambient occlusion
-export const naiveMeshing = (blockStructure: BlockStructureComponent): Float32Array => {
+export const naiveMeshing = (blockStructure: number[][][]): Float32Array => {
 
   // TODO: replace type with more concrete type
   const output: any[] = [];
 
-  for(let i = 0; i < chunkSize; i++) {
-    for(let j = 0; j < chunkSize; j++) {
-      for(let k = 0; k < chunkSize; k++) {
+  for(let i = 0; i < blockStructure.length; i++) {
+    for(let j = 0; j < blockStructure[i].length; j++) {
+      for(let k = 0; k < blockStructure[i][j].length; k++) {
 
         if(blockStructure[i][j][k] == 0)
           continue;
 
-        const block = dictionary[blockStructure[i][j][k]];
+        const block = {
+          name: 'dirt',
+          type: 'fullBlock',
+          mesh: fullBlockMesh,
+          u: 0.125,
+          v: 0
+        };
+          // dictionary[blockStructure[i][j][k]];
 
         // skip over special blocks for now
-        if(block.type != 'fullBlock' || block.type == 'none')
-          continue;
+        // if(block.type != 'fullBlock' || block.type == 'none')
+        //  continue;
 
 
         if(i == 0 || blockStructure[i - 1][j][k] == 0)
           output.push(...fullBlockMesh.westFace(i, j, k, block.u, block.v))
-        if(i == chunkSize - 1 || blockStructure[i + 1][j][k] == 0)
+        if(i == blockStructure.length - 1 || blockStructure[i + 1][j][k] == 0)
           output.push(...fullBlockMesh.eastFace(i, j, k, block.u, block.v))
 
         if(j == 0 || blockStructure[i][j - 1][k] == 0)
           output.push(...fullBlockMesh.bottomFace(i, j, k, block.u, block.v))
-        if(j == chunkSize - 1 || blockStructure[i][j + 1][k] == 0)
+        if(j == blockStructure[i].length - 1 || blockStructure[i][j + 1][k] == 0)
           output.push(...fullBlockMesh.topFace(i, j, k, block.u, block.v))
 
         if(k == 0 || blockStructure[i][j][k - 1] == 0)
           output.push(...fullBlockMesh.southFace(i, j, k, block.u, block.v))
-        if(k == chunkSize - 1 || blockStructure[i][j][k + 1] == 0)
+        if(k == blockStructure[i][j].length - 1 || blockStructure[i][j][k + 1] == 0)
           output.push(...fullBlockMesh.northFace(i, j, k, block.u, block.v))
 
       }
