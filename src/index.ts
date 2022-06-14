@@ -11,7 +11,7 @@ import { ECState, createECState } from './engine/ec';
 import { createProfiler, updateProfiler, start, end } from './engine/profiler';
 import { createWindow } from './engine/window';
 
-const captureInput = (state: State): State => {
+const captureInput = (gl: WebGL2RenderingContext, state: State): State => {
   window.onkeyup = (e: KeyboardEvent) => {
     state.activeInput.delete(e.key.toLowerCase());
   }
@@ -24,6 +24,14 @@ const captureInput = (state: State): State => {
       state.mouseMovement = [ e.movementX, e.movementY ];
   }
 
+  const lockChangeAlert = () => {
+    if (document.pointerLockElement === gl.canvas)
+      state.lock = true;
+    else
+      state.lock = false;
+  }
+  document.addEventListener('pointerlockchange', lockChangeAlert, false);
+
   return state;
 }
 
@@ -31,9 +39,10 @@ const main = () => {
 
   const gl = createWindow();
   let profiler = createProfiler(true); // boolean parameter: print or not
+  // let dispatchProfiler = createProfiler(false);
   
   let state: State = create(gl);
-  state = captureInput(state);
+  state = captureInput(gl, state);
 
   let previousTime = -1;
   const gameloop = (time: number) => {
@@ -44,14 +53,6 @@ const main = () => {
     if(previousTime == -1)
       previousTime = time;
     const delta = (time - previousTime) * 0.001; // in seconds
-
-    const lockChangeAlert = () => {
-      if (document.pointerLockElement === gl.canvas)
-        state.lock = true;
-      else
-        state.lock = false;
-    }
-    document.addEventListener('pointerlockchange', lockChangeAlert, false);
 
     // flush events, need to figure a way to pass event data/how to structure event data
     while(state.queue.length != 0) {
@@ -68,7 +69,10 @@ const main = () => {
     state = dispatch(gl, state, "tick",   delta)(null);
 
     // profile this
+    // dispatchProfiler = start(dispatchProfiler);
     state = dispatch(gl, state, "render", delta)(null);
+    // dispatchProfiler = end(dispatchProfiler);
+    // console.log(dispatchProfiler.delta);
 
     profiler = updateProfiler(profiler, delta);
 

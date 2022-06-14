@@ -12,6 +12,9 @@ import { ChunkFactory, loadChunk } from './chunk';
 import { RenderObject, Structure, ChunkPos } from './components/chunk';
 import { renderChunks } from './systems/chunk';
 
+import { Block, BlockDictionary } from './block';
+import { fullBlockMesh } from './mesh';
+
 import { loadTexture } from '../render';
 
 // TODO:
@@ -31,6 +34,7 @@ export interface Player extends Camera {
 
 export interface ExampleState extends ECState {
   chunkFactory: ChunkFactory;
+  blockDictionary: BlockDictionary;
   atlas: WebGLTexture;
   player: Player;
 };
@@ -41,6 +45,7 @@ export const init = (gl: WebGL2RenderingContext): ExampleState => {
     ...createECState(gl),
     player: createCamera(gl),
     chunkFactory: ChunkFactory(gl),
+    blockDictionary: createBlockDictionary(),
     atlas: loadTexture(gl, "atlas.png"),
   };
 
@@ -55,3 +60,28 @@ export const init = (gl: WebGL2RenderingContext): ExampleState => {
 
   return state;
 }
+
+const createBlockDictionary = () => ([
+        {
+          name: 'air',
+          type: 'air',
+          mesh: fullBlockMesh,
+          u: 0,
+          v: 0
+        },
+        {
+          name: 'dirt',
+          type: 'fullBlock',
+          mesh: fullBlockMesh,
+          u: 0.125,
+          v: 0
+        },
+        {
+          name: 'grass',
+          type: 'fullBlock',
+          mesh: fullBlockMesh,
+          u: 0.0,
+          v: 0
+        },
+
+]);

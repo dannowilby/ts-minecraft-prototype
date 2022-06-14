@@ -50,12 +50,15 @@ export const unloadChunks: System = <T extends State>(gl: WebGL2RenderingContext
   if(!chunkPosStorage)
     return castedState as any as T;
 
-  chunkPosStorage.forEach((v) => {
-    if(chunkPos.distance(v) > loadDistance) {
-      castedState = unloadChunk(castedState, v);
-      castedState.queue.push({ type: "chunkUnload", data: chunkPos })
+  for(let i = 0; i < loadDistance * 2; i++)
+    for(let j = 0; j < loadDistance * 2; j++) {
+      castedState = loadChunk(gl, castedState, new Vector3(
+        Math.floor(chunkPos.x / chunkSize) - loadDistance + i, 
+        0,
+        Math.floor(chunkPos.z / chunkSize) - loadDistance + j
+      ));
+      castedState.queue.push({ type: "chunkLoad", data: chunkPos })
     }
-  });
 
   return castedState as any as T;
 }

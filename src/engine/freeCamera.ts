@@ -24,7 +24,7 @@ export const projectionMatrix = (w: number, h: number): Matrix4 => (
       fovy: (Math.PI * 70) / 180,
       aspect: window.innerWidth / window.innerHeight,
       near: 0.1,
-      far: 100.0
+      far: 1000.0
     })
 ); 
 
@@ -115,7 +115,7 @@ export const freeCameraInput = (camera: Camera, state: State, delta: number): Ca
   if(!lock)
     return camera;
 
-  const speed = camera.speed;
+  let speed = camera.speed;
 
   const up = new Vector3(0, 1, 0);
   const move = multiplyAndDestructVector3(camera.direction, speed * delta);

@@ -41,12 +41,12 @@ export const updateProfiler = (profiler: Profiler, delta: number): Profiler => {
 };
 
 export const start = (profiler: Profiler): Profiler => {
-  profiler.delta = Date.now();
+  profiler.delta = window.performance.now();
   return profiler;
 };
 
 export const end = (profiler: Profiler): Profiler => {
-  profiler.delta = Date.now() - profiler.delta;
+  profiler.delta =  window.performance.now() - profiler.delta;
   return profiler;
 }
 

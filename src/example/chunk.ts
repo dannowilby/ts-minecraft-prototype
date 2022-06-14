@@ -1,5 +1,5 @@
 
-import { Vector3 } from '@math.gl/core';
+import { Vector2, Vector3 } from '@math.gl/core';
 import { EntityId, Entities, Components, newEntity, addComponent, ECState, removeEntity } from '../engine/ec';
 import { createChunkRenderObject, naiveMeshing, chunkVertexShader, chunkFragmentShader } from './mesh';
 import { initShaders } from '../render';
@@ -21,22 +21,7 @@ export const ChunkFactory = (gl: WebGL2RenderingContext): ChunkFactory => ({
   noise: new SimplexNoise('seed'),
 });
 
-const newChunk = (gl: WebGL2RenderingContext, chunkFactory: ChunkFactory, pos: Vector3): [ Structure, RenderObject ] => {
-
-  const structure = generateStructure(chunkFactory, pos);
-  const renderObject = buildChunk(gl, chunkFactory, structure, pos);
-
-  return [ structure, renderObject ];
-}
-
-// used for updating/meshing
-const buildChunk = (gl: WebGL2RenderingContext, chunkFactory: ChunkFactory, structure: Structure, pos: Vector3): RenderObject => {
-
-  const mesh = naiveMeshing(structure);
-  const renderObject = createChunkRenderObject(gl, chunkFactory, pos, naiveMeshing(structure));
-
-  return renderObject;
-}
+export const chunkId = (pos: Vector3) => (`chu-${pos.x}-${pos.y}-${pos.z}`);
 
 /** Start EXPOSED CHUNK FUNCTIONS **/
 
@@ -46,33 +31,29 @@ export const loadChunk = (gl: WebGL2RenderingContext, state: ExampleState, pos: 
   const components = state.components;
   const chunkFactory = state.chunkFactory;
 
-  const entityId = `chu-${pos.x}-${pos.y}-${pos.z}`;
+  const entityId = chunkId(pos);
 
   if(state.entities.has(entityId))
     return state;
 
   const entity = newEntity(entities, entityId);
 
-  // check if chunk exists already, if not create a new one
-  const [ structure, renderObject ] = newChunk(gl, chunkFactory, pos);
-
+  const structure = generateStructure(state, pos);
   state = addComponent(state, entityId, "structures", structure);
+
+  const renderObject = buildChunk(gl, state, pos);
   state = addComponent(state, entityId, "renderObjects", renderObject);
+
   state = addComponent(state, entityId, "chunkPos", pos);
   
   return state;
 }
 
-const updateChunk = (gl: WebGL2RenderingContext, chunkFactory: ChunkFactory, entities: Entities, components: Components, pos: Vector3): [ Entities, Components ] => {
-
-  const entityId = `chu-${pos.x}-${pos.y}-${pos.z}`;
-
-  return [ entities, components ];
-}
+const updateChunk = (gl: WebGL2RenderingContext) => {}
 
 export const unloadChunk = (state: ExampleState, pos: Vector3): ExampleState => {
 
-  const entityId = `chu-${pos.x}-${pos.y}-${pos.z}`;
+  const entityId = chunkId(pos);
   if(!state.entities.has(entityId))
     return state;
 
@@ -81,36 +62,66 @@ export const unloadChunk = (state: ExampleState, pos: Vector3): ExampleState => 
 
 /** End EXPOSED CHUNK FUNCTIONS */
 
-
-// could separate into generation file
-const generateStructure = (chunkFactory: ChunkFactory, pos: Vector3): Structure => {
-
-  const output: number[][][] = [];
+export const generateBlock = (state: ExampleState, pos: Vector3): number => {
+  const chunkFactory = state.chunkFactory;
   const chunkSize = chunkFactory.chunkSize;
 
   const baseHeight = chunkFactory.chunkSize / 2;
   const wavelength = chunkSize * 2;
   const height = chunkSize / 4;
 
+  const h = baseHeight + height * chunkFactory.noise.noise2D(pos.x / wavelength, pos.z / wavelength);
+
+  if(pos.y < h)
+    if(Math.random() < 0.5)
+      return 1;
+    else
+      return 2;
+
+  return 0;
+}
+
+// could separate into generation file
+export const generateStructure = (state: ExampleState, pos: Vector3): Structure => {
+
+  const output: number[][][] = [];
+
+  const entityId = chunkId(pos);
+  const chunkFactory = state.chunkFactory;
+  const chunkSize = chunkFactory.chunkSize;
+
+  const blockPos = new Vector3(pos.x * chunkSize, pos.y * chunkSize, pos.z * chunkSize);
+
+  // build an empty structure
   for(let i = 0; i < chunkSize; i++) { // x
     output.push([]);
     for(let j = 0; j < chunkSize; j++) { // y
       output[i].push([]) 
+    }
+  }
+
+  // set the blocks
+  for(let i = 0; i < chunkSize; i++) { // x
+    for(let j = 0; j < chunkSize; j++) { // y
       for(let k = 0; k < chunkSize; k++) {  // z
 
-        const gx = chunkSize * pos.x + i;
-        const gz = chunkSize * pos.z + k;
+        const gx = blockPos.x + i;
+        const gy = blockPos.y + j;
+        const gz = blockPos.z + k;
 
-        const h = baseHeight + height * chunkFactory.noise.noise2D(gx / wavelength, gz / wavelength);
-
-        if(j <= h)
-          output[i][j][k] =  1;
-        else
-          output[i][j][k] = 0;
-
+        output[i][j][k] = generateBlock(state, new Vector3(gx, gy, gz));
       }
     }
   }
         
   return output;
+}
+
+// used for updating/meshing
+const buildChunk = (gl: WebGL2RenderingContext, state: ExampleState, pos: Vector3): RenderObject => {
+
+  const mesh = naiveMeshing(state, pos);
+  const renderObject = createChunkRenderObject(gl, state.chunkFactory, pos, mesh);
+
+  return renderObject;
 }

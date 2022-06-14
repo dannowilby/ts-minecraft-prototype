@@ -14,6 +14,9 @@ export const cameraInput: System = <T extends State>(gl: WebGL2RenderingContext,
 
   castedState.mouseMovement = [ 0, 0 ];
 
+  if(castedState.activeInput.has("g"))
+    console.log(castedState.player.position);
+
   return castedState as any as T;
 }
 
