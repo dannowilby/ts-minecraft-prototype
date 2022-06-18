@@ -15,7 +15,7 @@ import { renderChunks } from './systems/chunk';
 import { Block, BlockDictionary } from './block';
 import { fullBlockMesh } from './mesh';
 
-import { loadTexture } from '../render';
+import { loadTexture } from './render';
 
 // TODO:
 // convert to octree
@@ -62,26 +62,25 @@ export const init = (gl: WebGL2RenderingContext): ExampleState => {
 }
 
 const createBlockDictionary = () => ([
-        {
-          name: 'air',
-          type: 'air',
-          mesh: fullBlockMesh,
-          u: 0,
-          v: 0
-        },
-        {
-          name: 'dirt',
-          type: 'fullBlock',
-          mesh: fullBlockMesh,
-          u: 0.125,
-          v: 0
-        },
-        {
-          name: 'grass',
-          type: 'fullBlock',
-          mesh: fullBlockMesh,
-          u: 0.0,
-          v: 0
-        },
-
+  {
+    name: 'air',
+    type: 'air',
+    mesh: fullBlockMesh,
+    u: 0,
+    v: 0
+  },
+  {
+    name: 'dirt',
+    type: 'fullBlock',
+    mesh: fullBlockMesh,
+    u: 0.125,
+    v: 0
+  },
+  {
+    name: 'grass',
+    type: 'fullBlock',
+    mesh: fullBlockMesh,
+    u: 0.0,
+    v: 0
+  },
 ]);

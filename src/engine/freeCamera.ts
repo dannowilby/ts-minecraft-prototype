@@ -2,7 +2,6 @@
 import { Vector3, Matrix4 } from '@math.gl/core';
 import { radians, multiplyAndDestructVector3, functionalCrossVector3 } from '../lib/math';
 
-import { loadTexture } from '../render';
 import { State } from './state';
 
 export type Camera = {

@@ -2,7 +2,7 @@
 import { Vector2, Vector3 } from '@math.gl/core';
 import { EntityId, Entities, Components, newEntity, addComponent, ECState, removeEntity } from '../engine/ec';
 import { createChunkRenderObject, naiveMeshing, chunkVertexShader, chunkFragmentShader } from './mesh';
-import { initShaders } from '../render';
+import { initShaders } from './render';
 import { Structure, RenderObject } from './components/chunk';
 import { ExampleState } from './index';
 import SimplexNoise from 'simplex-noise';
