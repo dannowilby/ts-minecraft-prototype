@@ -43,12 +43,12 @@ export const cameraInput: System = <T extends State>(gl: WebGL2RenderingContext,
   return castedState as any as T;
 }
 
-
-
 // FIXME: build surrounding chunks so no missing faces on chunk borders
 export const blockInput: System = <T extends State>(gl: WebGL2RenderingContext, state: T, delta: number) => (data: any): T => {
 
   let castedState = state as any as ExampleState;
+
+  const chunkSize = castedState.chunkFactory.chunkSize;
 
   const which = data?.which;
   const { position, direction, rayStep, rayMaxLength } = castedState.player;
@@ -71,6 +71,26 @@ export const blockInput: System = <T extends State>(gl: WebGL2RenderingContext, 
     // update the mesh
     castedState = updateChunk(gl, castedState, chunkPos);
 
+    const modulo = new Vector3(
+        ((blockPos.x % chunkSize) + chunkSize) % chunkSize,
+        ((blockPos.y % chunkSize) + chunkSize) % chunkSize,
+        ((blockPos.z % chunkSize) + chunkSize) % chunkSize
+    );
+
+    if(modulo.x % chunkSize == 0)
+      castedState = updateChunk(gl, castedState, new Vector3(chunkPos.x - 1, chunkPos.y, chunkPos.z));
+    if(modulo.x % chunkSize == chunkSize - 1)
+      castedState = updateChunk(gl, castedState, new Vector3(chunkPos.x + 1, chunkPos.y, chunkPos.z));
+
+    if(modulo.y % chunkSize == 0)
+      castedState = updateChunk(gl, castedState, new Vector3(chunkPos.x, chunkPos.y - 1, chunkPos.z));
+    if(modulo.y % chunkSize == chunkSize - 1)
+      castedState = updateChunk(gl, castedState, new Vector3(chunkPos.x, chunkPos.y + 1, chunkPos.z));
+
+    if(modulo.z % chunkSize == 0)
+      castedState = updateChunk(gl, castedState, new Vector3(chunkPos.x, chunkPos.y, chunkPos.z - 1));
+    if(modulo.z % chunkSize == chunkSize - 1)
+      castedState = updateChunk(gl, castedState, new Vector3(chunkPos.x, chunkPos.y, chunkPos.z + 1));
   }
   // right click - add block
   if(which == 3) {
