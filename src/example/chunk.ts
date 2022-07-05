@@ -23,6 +23,11 @@ export const ChunkFactory = (gl: WebGL2RenderingContext): ChunkFactory => ({
 
 export const chunkId = (pos: Vector3) => (`chu-${pos.x}-${pos.y}-${pos.z}`);
 
+export const chunkPosFromBlockPos = (state: ExampleState, pos: Vector3): Vector3 => (new Vector3(
+  Math.floor(pos.x / state.chunkFactory.chunkSize), 
+  Math.floor(pos.y / state.chunkFactory.chunkSize), 
+  Math.floor(pos.z / state.chunkFactory.chunkSize) 
+));
 /** Start EXPOSED CHUNK FUNCTIONS **/
 
 export const loadChunk = (gl: WebGL2RenderingContext, state: ExampleState, pos: Vector3): ExampleState => {
@@ -49,7 +54,15 @@ export const loadChunk = (gl: WebGL2RenderingContext, state: ExampleState, pos: 
   return state;
 }
 
-const updateChunk = (gl: WebGL2RenderingContext) => {}
+export const updateChunk = (gl: WebGL2RenderingContext, state: ExampleState, pos: Vector3): ExampleState => {
+
+  const cid = chunkId(pos);
+  const renderObject = buildChunk(gl, state, pos);
+
+  state = addComponent(state, cid, "renderObjects", renderObject);
+
+  return state;
+}
 
 export const unloadChunk = (state: ExampleState, pos: Vector3): ExampleState => {
 
@@ -62,6 +75,76 @@ export const unloadChunk = (state: ExampleState, pos: Vector3): ExampleState => 
 
 /** End EXPOSED CHUNK FUNCTIONS */
 
+// FIXME: doesn't set the block if it's not loaded
+export const setBlock = (state: ExampleState, pos: Vector3, blockId: number): ExampleState => {
+  
+  const chunkSize = state.chunkFactory.chunkSize;
+
+  const blockPos = new Vector3(
+    Math.floor(pos.x),
+    Math.floor(pos.y),
+    Math.floor(pos.z)
+  );
+  
+  const tlocalPos = new Vector3(
+    blockPos.x % state.chunkFactory.chunkSize,
+    blockPos.y % state.chunkFactory.chunkSize,
+    blockPos.z % state.chunkFactory.chunkSize
+  );
+
+  const localPos = new Vector3(
+    tlocalPos.x < 0 ? chunkSize + tlocalPos.x : tlocalPos.x,
+    tlocalPos.y < 0 ? chunkSize + tlocalPos.y : tlocalPos.y,
+    tlocalPos.z < 0 ? chunkSize + tlocalPos.z : tlocalPos.z,
+  );
+
+  const chunkPos = chunkPosFromBlockPos(state, blockPos);
+  const chunkEntity = chunkId(chunkPos);
+
+  const structure = state.components["structures"]?.get(chunkEntity);
+
+  // if structure exists set block and replace it
+  if(structure) {
+    structure[localPos.x][localPos.y][localPos.z] = blockId;
+    state = addComponent(state, chunkEntity, "structures", structure);
+  }
+
+  return state;
+}
+
+export const getBlock = (state: ExampleState, pos: Vector3): number => {
+
+  const chunkSize = state.chunkFactory.chunkSize;
+
+  const blockPos = new Vector3(
+    Math.floor(pos.x),
+    Math.floor(pos.y),
+    Math.floor(pos.z)
+  );
+  
+  const tlocalPos = new Vector3(
+    blockPos.x % state.chunkFactory.chunkSize,
+    blockPos.y % state.chunkFactory.chunkSize,
+    blockPos.z % state.chunkFactory.chunkSize
+  );
+
+  const localPos = new Vector3(
+    tlocalPos.x < 0 ? chunkSize + tlocalPos.x : tlocalPos.x,
+    tlocalPos.y < 0 ? chunkSize + tlocalPos.y : tlocalPos.y,
+    tlocalPos.z < 0 ? chunkSize + tlocalPos.z : tlocalPos.z,
+  );
+
+  const chunkPos = chunkPosFromBlockPos(state, blockPos);
+  const chunkEntity = chunkId(chunkPos);
+
+  const structure = state.components["structures"]?.get(chunkEntity);
+
+  if(structure)
+    return structure[localPos.x][localPos.y][localPos.z];
+
+  return generateBlock(state, pos);
+}
+
 export const generateBlock = (state: ExampleState, pos: Vector3): number => {
   const chunkFactory = state.chunkFactory;
   const chunkSize = chunkFactory.chunkSize;
@@ -70,13 +153,12 @@ export const generateBlock = (state: ExampleState, pos: Vector3): number => {
   const wavelength = chunkSize * 2;
   const height = chunkSize / 4;
 
+  // check for already loaded chunks
+
   const h = baseHeight + height * chunkFactory.noise.noise2D(pos.x / wavelength, pos.z / wavelength);
 
   if(pos.y < h)
-    if(Math.random() < 0.5)
-      return 1;
-    else
-      return 2;
+    return 2;
 
   return 0;
 }

@@ -44,6 +44,11 @@ const main = () => {
   let state: State = create(gl);
   state = captureInput(gl, state);
 
+
+  document.onclick = (e) => {
+    state = dispatch(gl, state, "click", 0)(e);
+  }
+
   let previousTime = -1;
   const gameloop = (time: number) => {
     

@@ -4,7 +4,6 @@ import { getBlock } from "./chunk";
 import { Matrix4, Vector3 } from "@math.gl/core";
 import { System } from "../engine/state";
 import { Camera, createCamera } from '../engine/freeCamera';
-import {initShaders} from "./render";
 
 export interface SelectionBox {
 
@@ -21,11 +20,10 @@ export interface Player extends Camera {
   selectionBox: SelectionBox;
 };
 
-export const createPlayer = (gl: WebGL2RenderingContext): Player => ({ 
+export const createPlayer = (gl: WebGL2RenderingContext) => ({ 
       rayStep: 0.1,
       rayMaxLength: 5,
       ...createCamera(gl),
-      selectionBox: createSelectionBox(gl)
 })
 
 export interface RayCastHit {
@@ -33,86 +31,8 @@ export interface RayCastHit {
   previous: Vector3;
 };
 
-const createSelectionBox = (gl: WebGL2RenderingContext): SelectionBox => {
 
-  const program = initShaders(gl, boxVertexShader, boxFragmentShader);
-
-  const mesh = new Float32Array([
-
-    0.0, 0.0, 0.0,
-    0.0, 1.0, 0.0,
-      
-    0.0, 0.0, 0.0,
-    1.0, 0.0, 0.0,
-
-    0.0, 0.0, 0.0,
-    0.0, 0.0, 1.0,
-
-    1.0, 1.0, 1.0,
-    0.0, 1.0, 1.0,
-
-    1.0, 1.0, 1.0,
-    1.0, 0.0, 1.0,
-
-    1.0, 1.0, 1.0,
-    1.0, 1.0, 0.0,
-
-    0.0, 1.0, 0.0,
-    0.0, 1.0, 1.0,
-
-    1.0, 0.0, 0.0,
-    1.0, 0.0, 1.0,
-
-    0.0, 0.0, 1.0,
-    1.0, 0.0, 1.0,
-    
-    0.0, 1.0, 0.0,
-    1.0, 1.0, 0.0,
-
-    1.0, 0.0, 0.0,
-    1.0, 1.0, 0.0,
-
-    0.0, 0.0, 1.0,
-    0.0, 1.0, 1.0,
-
-  ]);
-
-  const vao = gl.createVertexArray();
-  const vbo = gl.createBuffer();
-
-  if(!vao)
-    throw new Error("Failed creating VAO");
-  if(!vbo)
-    throw new Error("Failed creating VBO");
-
-  gl.bindVertexArray(vao);
-
-  gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
-  gl.bufferData(gl.ARRAY_BUFFER, mesh, gl.STATIC_DRAW);
-
-  const vertexSize = 3;
-
-  const stride = 4 * 3;
-  
-  const vertexOffset = 0;
-
-  const positionAttributeLocation = gl.getAttribLocation(program, 'v_Position');
-  gl.vertexAttribPointer(positionAttributeLocation, vertexSize, gl.FLOAT, false, stride, vertexOffset);
-  gl.enableVertexAttribArray(positionAttributeLocation);
-
-  const vertexCount = mesh.length / 3;
-
-  const model = (new Matrix4()).identity();
-
-  return {
-    program,
-    vao,
-    vertexCount,
-    model
-  };
-};
-
-export const drawSelectionBox = (gl:WebGL2RenderingContext, state: ExampleState): ExampleState => {
+export const renderSelectionBox = (gl:WebGL2RenderingContext, state: ExampleState) => {
 
     const { program, vao, vertexCount, model: modelMatrix } = state.player.selectionBox;
     const { projection: projectionMatrix, view: viewMatrix } = state.player;
@@ -129,8 +49,6 @@ export const drawSelectionBox = (gl:WebGL2RenderingContext, state: ExampleState)
 
     gl.bindVertexArray(vao);
     gl.drawArrays(gl.LINES, 0, vertexCount);
-
-    return state;
 }
 
 export const rayCast = (gl: WebGL2RenderingContext, state: ExampleState, pos: Vector3, dir: Vector3, rayStep: number, rayMaxLength: number): RayCastHit | null => {
@@ -172,26 +90,3 @@ export const rayCast = (gl: WebGL2RenderingContext, state: ExampleState, pos: Ve
 
   return null;
 }
-
-const boxVertexShader = `#version 300 es
-  in vec3 v_Position;
-
-  uniform mat4 projection;
-  uniform mat4 view;
-  uniform mat4 model;
-  
-  void main() {
-    
-    gl_Position = projection * view * model * vec4(v_Position, 1.0);
-  }
-`;
-
-const boxFragmentShader = `#version 300 es
-  precision highp float;
-  
-  out vec4 frag_color;
-
-  void main() {
-    frag_color = vec4(0.0, 0.0, 0.0, 1.0);
-  }
-`;

@@ -24,3 +24,11 @@ export const projectionMatrix = (w: number, h: number): Matrix4 => (
       far: 100.0
     })
 ); 
+
+export const floorVector = (pos: Vector3) => (
+  new Vector3(
+    Math.floor(pos.x),
+    Math.floor(pos.y),
+    Math.floor(pos.z)
+  )
+)

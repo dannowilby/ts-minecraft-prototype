@@ -3,7 +3,7 @@ import { Vector3, Matrix4 } from '@math.gl/core';
 
 import { ExampleState } from './index';
 import { Structure } from './components/chunk';
-import { ChunkFactory, chunkId, generateStructure, generateBlock } from './chunk';
+import { ChunkFactory, chunkId, generateStructure, getBlock } from './chunk';
 import { RenderObject } from './components/chunk';
 import {addComponent, newEntity} from '../engine/ec';
 
@@ -159,13 +159,13 @@ export const naiveMeshing = (state: ExampleState, pos: Vector3): Float32Array =>
 
         const blockPos = sum(startPos, ([i, j, k]));
 
-        if(generateBlock(state, blockPos) == 0)
+        if(getBlock(state, blockPos) == 0)
           continue;
 
-        const blockId = generateBlock(state, blockPos);
+        const blockId = getBlock(state, blockPos);
         const block = dict[blockId];
 
-        if(generateBlock(state, sum(blockPos, ([ 1, 0, 0 ]))) == 0)
+        if(getBlock(state, sum(blockPos, ([ 1, 0, 0 ]))) == 0)
           output.push(
             ...block.mesh.eastFace(
               i, 
@@ -174,18 +174,18 @@ export const naiveMeshing = (state: ExampleState, pos: Vector3): Float32Array =>
               block.u, 
               block.v,
               calculateAO(
-                generateBlock(state, sum(blockPos, [ 1, 1, 0 ])), // side
-                generateBlock(state, sum(blockPos, [ 1, 1, 1 ])), // corner
-                generateBlock(state, sum(blockPos, [ 1, 0, 1 ])), // side
-                generateBlock(state, sum(blockPos, [ 1,-1, 1 ])), // corner
-                generateBlock(state, sum(blockPos, [ 1,-1, 0 ])), // side
-                generateBlock(state, sum(blockPos, [ 1,-1,-1 ])), // corner
-                generateBlock(state, sum(blockPos, [ 1, 0,-1 ])), // side
-                generateBlock(state, sum(blockPos, [ 1, 1,-1 ])) // corner
+                getBlock(state, sum(blockPos, [ 1, 1, 0 ])), // side
+                getBlock(state, sum(blockPos, [ 1, 1, 1 ])), // corner
+                getBlock(state, sum(blockPos, [ 1, 0, 1 ])), // side
+                getBlock(state, sum(blockPos, [ 1,-1, 1 ])), // corner
+                getBlock(state, sum(blockPos, [ 1,-1, 0 ])), // side
+                getBlock(state, sum(blockPos, [ 1,-1,-1 ])), // corner
+                getBlock(state, sum(blockPos, [ 1, 0,-1 ])), // side
+                getBlock(state, sum(blockPos, [ 1, 1,-1 ])) // corner
               )
             ));
 
-        if(generateBlock(state, sum(blockPos, ([ -1, 0, 0 ]))) == 0)
+        if(getBlock(state, sum(blockPos, ([ -1, 0, 0 ]))) == 0)
           output.push(
             ...block.mesh.westFace(
               i, 
@@ -194,18 +194,18 @@ export const naiveMeshing = (state: ExampleState, pos: Vector3): Float32Array =>
               block.u, 
               block.v,
               calculateAO(
-                generateBlock(state, sum(blockPos, [-1, 1, 0 ])), // side
-                generateBlock(state, sum(blockPos, [-1, 1, 1 ])), // corner
-                generateBlock(state, sum(blockPos, [-1, 0, 1 ])), // side
-                generateBlock(state, sum(blockPos, [-1,-1, 1 ])), // corner
-                generateBlock(state, sum(blockPos, [-1,-1, 0 ])), // side
-                generateBlock(state, sum(blockPos, [-1,-1,-1 ])), // corner
-                generateBlock(state, sum(blockPos, [-1, 0,-1 ])), // side
-                generateBlock(state, sum(blockPos, [-1, 1,-1 ])) // corner
+                getBlock(state, sum(blockPos, [-1, 1, 0 ])), // side
+                getBlock(state, sum(blockPos, [-1, 1, 1 ])), // corner
+                getBlock(state, sum(blockPos, [-1, 0, 1 ])), // side
+                getBlock(state, sum(blockPos, [-1,-1, 1 ])), // corner
+                getBlock(state, sum(blockPos, [-1,-1, 0 ])), // side
+                getBlock(state, sum(blockPos, [-1,-1,-1 ])), // corner
+                getBlock(state, sum(blockPos, [-1, 0,-1 ])), // side
+                getBlock(state, sum(blockPos, [-1, 1,-1 ])) // corner
               )
         ));
 
-        if(generateBlock(state, sum(blockPos, ([ 0, 1, 0 ]))) == 0)
+        if(getBlock(state, sum(blockPos, ([ 0, 1, 0 ]))) == 0)
           output.push(
             ...block.mesh.topFace(
               i, 
@@ -214,18 +214,18 @@ export const naiveMeshing = (state: ExampleState, pos: Vector3): Float32Array =>
               block.u, 
               block.v, 
               calculateAO(
-                generateBlock(state, sum(blockPos, [ 1, 1, 0 ])), // side
-                generateBlock(state, sum(blockPos, [ 1, 1, 1 ])), // corner
-                generateBlock(state, sum(blockPos, [ 0, 1, 1 ])), // side
-                generateBlock(state, sum(blockPos, [-1, 1, 1 ])), // corner
-                generateBlock(state, sum(blockPos, [-1, 1, 0 ])), // side
-                generateBlock(state, sum(blockPos, [-1, 1,-1 ])), // corner
-                generateBlock(state, sum(blockPos, [ 0, 1,-1 ])), // side
-                generateBlock(state, sum(blockPos, [ 1, 1,-1 ])) // corner
+                getBlock(state, sum(blockPos, [ 1, 1, 0 ])), // side
+                getBlock(state, sum(blockPos, [ 1, 1, 1 ])), // corner
+                getBlock(state, sum(blockPos, [ 0, 1, 1 ])), // side
+                getBlock(state, sum(blockPos, [-1, 1, 1 ])), // corner
+                getBlock(state, sum(blockPos, [-1, 1, 0 ])), // side
+                getBlock(state, sum(blockPos, [-1, 1,-1 ])), // corner
+                getBlock(state, sum(blockPos, [ 0, 1,-1 ])), // side
+                getBlock(state, sum(blockPos, [ 1, 1,-1 ])) // corner
               )
             ));
 
-        if(generateBlock(state, sum(blockPos, ([ 0, -1, 0 ]))) == 0)
+        if(getBlock(state, sum(blockPos, ([ 0, -1, 0 ]))) == 0)
           output.push(
             ...block.mesh.bottomFace(
               i, 
@@ -234,18 +234,18 @@ export const naiveMeshing = (state: ExampleState, pos: Vector3): Float32Array =>
               block.u, 
               block.v, 
               calculateAO(
-                generateBlock(state, sum(blockPos, [ 1, 1, 0 ])), // side
-                generateBlock(state, sum(blockPos, [ 1, 1, 1 ])), // corner
-                generateBlock(state, sum(blockPos, [ 0, 1, 1 ])), // side
-                generateBlock(state, sum(blockPos, [-1, 1, 1 ])), // corner
-                generateBlock(state, sum(blockPos, [-1, 1, 0 ])), // side
-                generateBlock(state, sum(blockPos, [-1, 1,-1 ])), // corner
-                generateBlock(state, sum(blockPos, [ 0, 1,-1 ])), // side
-                generateBlock(state, sum(blockPos, [ 1, 1,-1 ])) // corner
+                getBlock(state, sum(blockPos, [ 1,-1, 0 ])), // side
+                getBlock(state, sum(blockPos, [ 1,-1, 1 ])), // corner
+                getBlock(state, sum(blockPos, [ 0,-1, 1 ])), // side
+                getBlock(state, sum(blockPos, [-1,-1, 1 ])), // corner
+                getBlock(state, sum(blockPos, [-1,-1, 0 ])), // side
+                getBlock(state, sum(blockPos, [-1,-1,-1 ])), // corner
+                getBlock(state, sum(blockPos, [ 0,-1,-1 ])), // side
+                getBlock(state, sum(blockPos, [ 1,-1,-1 ])) // corner
               )
             ));
 
-        if(generateBlock(state, sum(blockPos, ([ 0, 0, 1 ]))) == 0)
+        if(getBlock(state, sum(blockPos, ([ 0, 0, 1 ]))) == 0)
           output.push(
             ...block.mesh.northFace(
               i, 
@@ -254,20 +254,20 @@ export const naiveMeshing = (state: ExampleState, pos: Vector3): Float32Array =>
               block.u, 
               block.v,
               calculateAO(
-                generateBlock(state, sum(blockPos, [ 1, 0, 1 ])), // side
-                generateBlock(state, sum(blockPos, [ 1, 1, 1 ])), // corner
-                generateBlock(state, sum(blockPos, [ 0, 1, 1 ])), // side
-                generateBlock(state, sum(blockPos, [-1, 1, 1 ])), // corner
-                generateBlock(state, sum(blockPos, [-1, 0, 1 ])), // side
-                generateBlock(state, sum(blockPos, [-1,-1, 1 ])), // corner
-                generateBlock(state, sum(blockPos, [ 0,-1, 1 ])), // side
-                generateBlock(state, sum(blockPos, [ 1,-1, 1 ])) // corner
+                getBlock(state, sum(blockPos, [ 1, 0, 1 ])), // side
+                getBlock(state, sum(blockPos, [ 1, 1, 1 ])), // corner
+                getBlock(state, sum(blockPos, [ 0, 1, 1 ])), // side
+                getBlock(state, sum(blockPos, [-1, 1, 1 ])), // corner
+                getBlock(state, sum(blockPos, [-1, 0, 1 ])), // side
+                getBlock(state, sum(blockPos, [-1,-1, 1 ])), // corner
+                getBlock(state, sum(blockPos, [ 0,-1, 1 ])), // side
+                getBlock(state, sum(blockPos, [ 1,-1, 1 ])) // corner
               )
 
 
             ));
 
-        if(generateBlock(state, sum(blockPos, ([ 0, 0, -1 ]))) == 0)
+        if(getBlock(state, sum(blockPos, ([ 0, 0, -1 ]))) == 0)
           output.push(
             ...block.mesh.southFace(
               i, 
@@ -276,14 +276,14 @@ export const naiveMeshing = (state: ExampleState, pos: Vector3): Float32Array =>
               block.u, 
               block.v,
               calculateAO(
-                generateBlock(state, sum(blockPos, [ 1, 0,-1 ])), // side
-                generateBlock(state, sum(blockPos, [ 1, 1,-1 ])), // corner
-                generateBlock(state, sum(blockPos, [ 0, 1,-1 ])), // side
-                generateBlock(state, sum(blockPos, [-1, 1,-1 ])), // corner
-                generateBlock(state, sum(blockPos, [-1, 0,-1 ])), // side
-                generateBlock(state, sum(blockPos, [-1,-1,-1 ])), // corner
-                generateBlock(state, sum(blockPos, [ 0,-1,-1 ])), // side
-                generateBlock(state, sum(blockPos, [ 1,-1,-1 ])) // corner
+                getBlock(state, sum(blockPos, [ 1, 0,-1 ])), // side
+                getBlock(state, sum(blockPos, [ 1, 1,-1 ])), // corner
+                getBlock(state, sum(blockPos, [ 0, 1,-1 ])), // side
+                getBlock(state, sum(blockPos, [-1, 1,-1 ])), // corner
+                getBlock(state, sum(blockPos, [-1, 0,-1 ])), // side
+                getBlock(state, sum(blockPos, [-1,-1,-1 ])), // corner
+                getBlock(state, sum(blockPos, [ 0,-1,-1 ])), // side
+                getBlock(state, sum(blockPos, [ 1,-1,-1 ])) // corner
               )
 
 
@@ -361,10 +361,10 @@ export const fullBlockMesh: Mesh = {
 
   bottomFace: (x, y, z, u, v, ao) => ([
     0.0 + x, 0.0 + y, 0.0 + z, u + textureWidthStart, v + textureWidthStart, ao[2],
-    1.0 + x, 0.0 + y, 0.0 + z, u + textureWidthOffset, v + textureWidthStart, ao[1],
+    1.0 + x, 0.0 + y, 0.0 + z, u + textureWidthOffset, v + textureWidthStart, ao[3],
     1.0 + x, 0.0 + y, 1.0 + z, u + textureWidthOffset, v + textureWidthOffset, ao[0],
     0.0 + x, 0.0 + y, 0.0 + z, u + textureWidthStart, v + textureWidthStart, ao[2], 
     1.0 + x, 0.0 + y, 1.0 + z, u + textureWidthOffset, v + textureWidthOffset, ao[0],
-    0.0 + x, 0.0 + y, 1.0 + z, u + textureWidthStart, v + textureWidthOffset, ao[3]
+    0.0 + x, 0.0 + y, 1.0 + z, u + textureWidthStart, v + textureWidthOffset, ao[1]
   ]),
 };

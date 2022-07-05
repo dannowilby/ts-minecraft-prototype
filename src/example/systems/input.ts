@@ -1,9 +1,11 @@
-import { Vector3 } from '@math.gl/core';
+import { Matrix4, Vector3 } from '@math.gl/core';
 import { ExampleState } from '../index';
 import { State, System } from '../../engine/state';
 import { freeCameraInput } from '../../engine/freeCamera';
 
-import { chunkId } from '../chunk';
+import { chunkId, chunkPosFromBlockPos, generateBlock, getBlock, setBlock, updateChunk } from '../chunk';
+import { drawSelectionBox, rayCast } from '../player';
+import {floorVector} from '../../lib/math';
 
 export const cameraInput: System = <T extends State>(gl: WebGL2RenderingContext, state: T, delta: number) => (data: any): T => {
 
@@ -37,6 +39,67 @@ export const cameraInput: System = <T extends State>(gl: WebGL2RenderingContext,
       castedState.components["renderObjects"].set(eid, chunk);
     }
   }
+
+  return castedState as any as T;
+}
+
+
+
+// FIXME: build surrounding chunks so no missing faces on chunk borders
+export const blockInput: System = <T extends State>(gl: WebGL2RenderingContext, state: T, delta: number) => (data: any): T => {
+
+  let castedState = state as any as ExampleState;
+
+  const which = data?.which;
+  const { position, direction, rayStep, rayMaxLength } = castedState.player;
+
+  const hit = rayCast(gl, castedState, position, direction, rayStep, rayMaxLength);
+  if(!hit)
+    return castedState as any as T;
+
+  const blockPos = floorVector(hit.position);
+  const chunkPos = chunkPosFromBlockPos(castedState, blockPos);
+
+  const prevPos = floorVector(hit.previous);
+  const prevChunkPos = chunkPosFromBlockPos(castedState, prevPos);
+
+  // left click - remove block
+  if(which == 1) {
+    // set the block
+    castedState = setBlock(castedState, blockPos, 0);
+    
+    // update the mesh
+    castedState = updateChunk(gl, castedState, chunkPos);
+
+  }
+  // right click - add block
+  if(which == 3) {
+    // set the block
+    castedState = setBlock(castedState, prevPos, 1);
+    
+    // update the mesh
+    castedState = updateChunk(gl, castedState, prevChunkPos);
+
+  }
+
+  return castedState as any as T;
+}
+
+export const renderSelectionBox: System = <T extends State>(gl: WebGL2RenderingContext, state: T, delta: number) => (data: any): T => {
+
+  let castedState = state as any as ExampleState;
+
+  const which = data?.which;
+  const { position, direction, rayStep, rayMaxLength } = castedState.player;
+
+  const hit = rayCast(gl, castedState, position, direction, rayStep, rayMaxLength);
+  if(!hit)
+    return castedState as any as T;
+
+  const pos = floorVector(hit.position);
+
+  castedState.player.selectionBox.model = castedState.player.selectionBox.model.identity().translate([pos.x, pos.y, pos.z]);
+  castedState = drawSelectionBox(gl, castedState);
 
   return castedState as any as T;
 }

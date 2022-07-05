@@ -5,12 +5,14 @@ import { State, createState, System, addSystem } from '../engine/state';
 import { ECState, createECState, registerComponent } from '../engine/ec';
 
 import { Camera, createCamera, freeCameraInput } from '../engine/freeCamera';
-import { cameraInput } from './systems/input';
+import { blockInput, cameraInput, onHit, renderSelectionBox } from './systems/input';
 import { loadChunks, unloadChunks } from './systems/world';
 
 import { ChunkFactory, loadChunk } from './chunk';
 import { RenderObject, Structure, ChunkPos } from './components/chunk';
 import { renderChunks } from './systems/chunk';
+
+import { Player, createPlayer } from './player';
 
 import { Block, BlockDictionary } from './block';
 import { fullBlockMesh } from './mesh';
@@ -28,10 +30,6 @@ import { loadTexture } from './render';
 // block breaking and adding
 // implement multithreading via webworkers
 
-export interface Player extends Camera {
-
-};
-
 export interface ExampleState extends ECState {
   chunkFactory: ChunkFactory;
   blockDictionary: BlockDictionary;
@@ -43,7 +41,7 @@ export const init = (gl: WebGL2RenderingContext): ExampleState => {
 
   let state = {
     ...createECState(gl),
-    player: createCamera(gl),
+    player: createPlayer(gl), 
     chunkFactory: ChunkFactory(gl),
     blockDictionary: createBlockDictionary(),
     atlas: loadTexture(gl, "atlas.png"),
@@ -56,6 +54,8 @@ export const init = (gl: WebGL2RenderingContext): ExampleState => {
   state = addSystem(state, "tick", unloadChunks);
   state = addSystem(state, "tick", loadChunks);
   state = addSystem(state, "input", cameraInput);
+  state = addSystem(state, "click", blockInput);
+  state = addSystem(state, "render", renderSelectionBox);
   state = addSystem(state, "render", renderChunks);
 
   return state;
