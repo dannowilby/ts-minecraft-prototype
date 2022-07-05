@@ -5,7 +5,7 @@ import { State, createState, System, addSystem } from '../engine/state';
 import { ECState, createECState, registerComponent } from '../engine/ec';
 
 import { Camera, createCamera, freeCameraInput } from '../engine/freeCamera';
-import { blockInput, cameraInput, onHit, renderSelectionBox } from './systems/input';
+import { blockInput, cameraInput, renderSelectionBox } from './systems/input';
 import { loadChunks, unloadChunks } from './systems/world';
 
 import { ChunkFactory, loadChunk } from './chunk';
