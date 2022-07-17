@@ -1,11 +1,11 @@
 
 import { Vector3, Matrix4 } from '@math.gl/core';
 
-import { ExampleState } from './index';
-import { Structure } from './components/chunk';
-import { ChunkFactory, chunkId, generateStructure, getBlock } from './chunk';
-import { RenderObject } from './components/chunk';
-import {addComponent, newEntity} from '../engine/ec';
+import { ExampleState } from '../index';
+import { Structure } from '../components/chunk';
+import { ChunkFactory, chunkId, getBlock, localBlockPosToIndex } from './chunk';
+import { RenderObject } from '../components/chunk';
+import { addComponent, newEntity, EntityId } from '../../engine/ec';
 
 export const chunkVertexShader = `#version 300 es
   in vec3 v_Position;
@@ -49,10 +49,9 @@ export const chunkFragmentShader = `#version 300 es
   }
 `;
 
-export const createChunkRenderObject = (gl: WebGL2RenderingContext, chunkFactory: ChunkFactory, pos: Vector3, mesh: Float32Array): RenderObject => {
+export const createChunkRenderObject = (gl: WebGL2RenderingContext, program: WebGLProgram, chunkFactory: ChunkFactory, pos: Vector3, mesh: Float32Array): RenderObject => {
 
   const chunkSize = chunkFactory.chunkSize;
-  const program = chunkFactory.program;
 
   const vao = gl.createVertexArray();
   const vbo = gl.createBuffer();
@@ -119,12 +118,12 @@ export const updateChunkRenderObject = (gl: WebGL2RenderingContext, program: Web
 };
 */
 
-const sum = (a: Vector3, b: number[]): Vector3 => {
+export const sum = (a: Vector3, b: number[]): Vector3 => {
   return new Vector3([a[0] + b[0], a[1] + b[1], a[2] + b[2]]);
 }
 
 
-const calculateAO = (side1: number, corner1: number, side2: number, corner2: number, side3: number, corner3: number, side4: number, corner4: number) => {
+export const calculateAO = (side1: number, corner1: number, side2: number, corner2: number, side3: number, corner3: number, side4: number, corner4: number) => {
 
  let v1 = (side1 && 1) + (side2 && 1) + (corner1 && 1);
  let v2 = (side2 && 1) + (side3 && 1) + (corner2 && 1);
@@ -138,152 +137,161 @@ const calculateAO = (side1: number, corner1: number, side2: number, corner2: num
 // In the future may implement a greedy algorithm to cut down on
 // vertex count
 // This sets the vertices/textures/ambient occlusion
-export const naiveMeshing = (state: ExampleState, pos: Vector3): Float32Array => {
+export const naiveMeshing = (chunkFactory: ChunkFactory, structures: Map<EntityId, Structure>, pos: Vector3): Float32Array => {
 
   const output: any[] = [];
+  //console.log(structures);
 
-  const chunkSize = state.chunkFactory.chunkSize;
-  const structures = state.components["structures"];
-  const blockStructure = structures.get(chunkId(pos));
+  const cId = `chu-${pos[0]}-${pos[1]}-${pos[2]}`;
+  //console.log(cId);
+  const chunkSize = chunkFactory.chunkSize;
+  const blockStructure = structures.get(cId);
 
-  const dict = state.blockDictionary;
+  if(!blockStructure) {
+    return new Float32Array();
+  }
 
-  const startPos = new Vector3(pos.x * chunkSize, pos.y * chunkSize, pos.z * chunkSize);
+  const dict = chunkFactory.blockDictionary;
+
+  const startPos = new Vector3(pos[0] * chunkSize, pos[1] * chunkSize, pos[2] * chunkSize);
 
   for(let i = 0; i < chunkSize; i++) {
     for(let j = 0; j < chunkSize; j++) {
       for(let k = 0; k < chunkSize; k++) {
 
-        if(blockStructure[i][j][k] == 0)
-          continue;
-
+        //if(i == 0 && j == 0 && k == 0)
+        //  console.log("Did we get here? 1")
+        
         const blockPos = sum(startPos, ([i, j, k]));
 
-        if(getBlock(state, blockPos) == 0)
+        if(getBlock(chunkFactory, structures, blockPos) == 0)
           continue;
 
-        const blockId = getBlock(state, blockPos);
+        if(getBlock(chunkFactory, structures, blockPos) == 0)
+          continue;
+
+        const blockId = getBlock(chunkFactory, structures, blockPos);
         const block = dict[blockId];
 
-        if(getBlock(state, sum(blockPos, ([ 1, 0, 0 ]))) == 0)
+        if(getBlock(chunkFactory, structures, sum(blockPos, ([ 1, 0, 0 ]))) == 0)
           output.push(
-            ...block.mesh.eastFace(
+            ...fullBlockMesh.eastFace(
               i, 
               j, 
               k, 
               block.u, 
               block.v,
               calculateAO(
-                getBlock(state, sum(blockPos, [ 1, 1, 0 ])), // side
-                getBlock(state, sum(blockPos, [ 1, 1, 1 ])), // corner
-                getBlock(state, sum(blockPos, [ 1, 0, 1 ])), // side
-                getBlock(state, sum(blockPos, [ 1,-1, 1 ])), // corner
-                getBlock(state, sum(blockPos, [ 1,-1, 0 ])), // side
-                getBlock(state, sum(blockPos, [ 1,-1,-1 ])), // corner
-                getBlock(state, sum(blockPos, [ 1, 0,-1 ])), // side
-                getBlock(state, sum(blockPos, [ 1, 1,-1 ])) // corner
+                getBlock(chunkFactory, structures, sum(blockPos, [ 1, 1, 0 ])), // side
+                getBlock(chunkFactory, structures, sum(blockPos, [ 1, 1, 1 ])), // corner
+                getBlock(chunkFactory, structures, sum(blockPos, [ 1, 0, 1 ])), // side
+                getBlock(chunkFactory, structures, sum(blockPos, [ 1,-1, 1 ])), // corner
+                getBlock(chunkFactory, structures, sum(blockPos, [ 1,-1, 0 ])), // side
+                getBlock(chunkFactory, structures, sum(blockPos, [ 1,-1,-1 ])), // corner
+                getBlock(chunkFactory, structures, sum(blockPos, [ 1, 0,-1 ])), // side
+                getBlock(chunkFactory, structures, sum(blockPos, [ 1, 1,-1 ])) // corner
               )
             ));
 
-        if(getBlock(state, sum(blockPos, ([ -1, 0, 0 ]))) == 0)
+        if(getBlock(chunkFactory, structures, sum(blockPos, ([ -1, 0, 0 ]))) == 0)
           output.push(
-            ...block.mesh.westFace(
+            ...fullBlockMesh.westFace(
               i, 
               j, 
               k, 
               block.u, 
               block.v,
               calculateAO(
-                getBlock(state, sum(blockPos, [-1, 1, 0 ])), // side
-                getBlock(state, sum(blockPos, [-1, 1, 1 ])), // corner
-                getBlock(state, sum(blockPos, [-1, 0, 1 ])), // side
-                getBlock(state, sum(blockPos, [-1,-1, 1 ])), // corner
-                getBlock(state, sum(blockPos, [-1,-1, 0 ])), // side
-                getBlock(state, sum(blockPos, [-1,-1,-1 ])), // corner
-                getBlock(state, sum(blockPos, [-1, 0,-1 ])), // side
-                getBlock(state, sum(blockPos, [-1, 1,-1 ])) // corner
+                getBlock(chunkFactory, structures, sum(blockPos, [-1, 1, 0 ])), // side
+                getBlock(chunkFactory, structures, sum(blockPos, [-1, 1, 1 ])), // corner
+                getBlock(chunkFactory, structures, sum(blockPos, [-1, 0, 1 ])), // side
+                getBlock(chunkFactory, structures, sum(blockPos, [-1,-1, 1 ])), // corner
+                getBlock(chunkFactory, structures, sum(blockPos, [-1,-1, 0 ])), // side
+                getBlock(chunkFactory, structures, sum(blockPos, [-1,-1,-1 ])), // corner
+                getBlock(chunkFactory, structures, sum(blockPos, [-1, 0,-1 ])), // side
+                getBlock(chunkFactory, structures, sum(blockPos, [-1, 1,-1 ])) // corner
               )
         ));
 
-        if(getBlock(state, sum(blockPos, ([ 0, 1, 0 ]))) == 0)
+        if(getBlock(chunkFactory, structures, sum(blockPos, ([ 0, 1, 0 ]))) == 0)
           output.push(
-            ...block.mesh.topFace(
+            ...fullBlockMesh.topFace(
               i, 
               j, 
               k, 
               block.u, 
               block.v, 
               calculateAO(
-                getBlock(state, sum(blockPos, [ 1, 1, 0 ])), // side
-                getBlock(state, sum(blockPos, [ 1, 1, 1 ])), // corner
-                getBlock(state, sum(blockPos, [ 0, 1, 1 ])), // side
-                getBlock(state, sum(blockPos, [-1, 1, 1 ])), // corner
-                getBlock(state, sum(blockPos, [-1, 1, 0 ])), // side
-                getBlock(state, sum(blockPos, [-1, 1,-1 ])), // corner
-                getBlock(state, sum(blockPos, [ 0, 1,-1 ])), // side
-                getBlock(state, sum(blockPos, [ 1, 1,-1 ])) // corner
+                getBlock(chunkFactory, structures, sum(blockPos, [ 1, 1, 0 ])), // side
+                getBlock(chunkFactory, structures, sum(blockPos, [ 1, 1, 1 ])), // corner
+                getBlock(chunkFactory, structures, sum(blockPos, [ 0, 1, 1 ])), // side
+                getBlock(chunkFactory, structures, sum(blockPos, [-1, 1, 1 ])), // corner
+                getBlock(chunkFactory, structures, sum(blockPos, [-1, 1, 0 ])), // side
+                getBlock(chunkFactory, structures, sum(blockPos, [-1, 1,-1 ])), // corner
+                getBlock(chunkFactory, structures, sum(blockPos, [ 0, 1,-1 ])), // side
+                getBlock(chunkFactory, structures, sum(blockPos, [ 1, 1,-1 ])) // corner
               )
             ));
 
-        if(getBlock(state, sum(blockPos, ([ 0, -1, 0 ]))) == 0)
+        if(getBlock(chunkFactory, structures, sum(blockPos, ([ 0, -1, 0 ]))) == 0)
           output.push(
-            ...block.mesh.bottomFace(
+            ...fullBlockMesh.bottomFace(
               i, 
               j, 
               k, 
               block.u, 
               block.v, 
               calculateAO(
-                getBlock(state, sum(blockPos, [ 1,-1, 0 ])), // side
-                getBlock(state, sum(blockPos, [ 1,-1, 1 ])), // corner
-                getBlock(state, sum(blockPos, [ 0,-1, 1 ])), // side
-                getBlock(state, sum(blockPos, [-1,-1, 1 ])), // corner
-                getBlock(state, sum(blockPos, [-1,-1, 0 ])), // side
-                getBlock(state, sum(blockPos, [-1,-1,-1 ])), // corner
-                getBlock(state, sum(blockPos, [ 0,-1,-1 ])), // side
-                getBlock(state, sum(blockPos, [ 1,-1,-1 ])) // corner
+                getBlock(chunkFactory, structures, sum(blockPos, [ 1,-1, 0 ])), // side
+                getBlock(chunkFactory, structures, sum(blockPos, [ 1,-1, 1 ])), // corner
+                getBlock(chunkFactory, structures, sum(blockPos, [ 0,-1, 1 ])), // side
+                getBlock(chunkFactory, structures, sum(blockPos, [-1,-1, 1 ])), // corner
+                getBlock(chunkFactory, structures, sum(blockPos, [-1,-1, 0 ])), // side
+                getBlock(chunkFactory, structures, sum(blockPos, [-1,-1,-1 ])), // corner
+                getBlock(chunkFactory, structures, sum(blockPos, [ 0,-1,-1 ])), // side
+                getBlock(chunkFactory, structures, sum(blockPos, [ 1,-1,-1 ])) // corner
               )
             ));
 
-        if(getBlock(state, sum(blockPos, ([ 0, 0, 1 ]))) == 0)
+        if(getBlock(chunkFactory, structures, sum(blockPos, ([ 0, 0, 1 ]))) == 0)
           output.push(
-            ...block.mesh.northFace(
+            ...fullBlockMesh.northFace(
               i, 
               j, 
               k, 
               block.u, 
               block.v,
               calculateAO(
-                getBlock(state, sum(blockPos, [ 1, 0, 1 ])), // side
-                getBlock(state, sum(blockPos, [ 1, 1, 1 ])), // corner
-                getBlock(state, sum(blockPos, [ 0, 1, 1 ])), // side
-                getBlock(state, sum(blockPos, [-1, 1, 1 ])), // corner
-                getBlock(state, sum(blockPos, [-1, 0, 1 ])), // side
-                getBlock(state, sum(blockPos, [-1,-1, 1 ])), // corner
-                getBlock(state, sum(blockPos, [ 0,-1, 1 ])), // side
-                getBlock(state, sum(blockPos, [ 1,-1, 1 ])) // corner
+                getBlock(chunkFactory, structures, sum(blockPos, [ 1, 0, 1 ])), // side
+                getBlock(chunkFactory, structures, sum(blockPos, [ 1, 1, 1 ])), // corner
+                getBlock(chunkFactory, structures, sum(blockPos, [ 0, 1, 1 ])), // side
+                getBlock(chunkFactory, structures, sum(blockPos, [-1, 1, 1 ])), // corner
+                getBlock(chunkFactory, structures, sum(blockPos, [-1, 0, 1 ])), // side
+                getBlock(chunkFactory, structures, sum(blockPos, [-1,-1, 1 ])), // corner
+                getBlock(chunkFactory, structures, sum(blockPos, [ 0,-1, 1 ])), // side
+                getBlock(chunkFactory, structures, sum(blockPos, [ 1,-1, 1 ])) // corner
               )
 
 
             ));
 
-        if(getBlock(state, sum(blockPos, ([ 0, 0, -1 ]))) == 0)
+        if(getBlock(chunkFactory, structures, sum(blockPos, ([ 0, 0, -1 ]))) == 0)
           output.push(
-            ...block.mesh.southFace(
+            ...fullBlockMesh.southFace(
               i, 
               j, 
               k, 
               block.u, 
               block.v,
               calculateAO(
-                getBlock(state, sum(blockPos, [ 1, 0,-1 ])), // side
-                getBlock(state, sum(blockPos, [ 1, 1,-1 ])), // corner
-                getBlock(state, sum(blockPos, [ 0, 1,-1 ])), // side
-                getBlock(state, sum(blockPos, [-1, 1,-1 ])), // corner
-                getBlock(state, sum(blockPos, [-1, 0,-1 ])), // side
-                getBlock(state, sum(blockPos, [-1,-1,-1 ])), // corner
-                getBlock(state, sum(blockPos, [ 0,-1,-1 ])), // side
-                getBlock(state, sum(blockPos, [ 1,-1,-1 ])) // corner
+                getBlock(chunkFactory, structures, sum(blockPos, [ 1, 0,-1 ])), // side
+                getBlock(chunkFactory, structures, sum(blockPos, [ 1, 1,-1 ])), // corner
+                getBlock(chunkFactory, structures, sum(blockPos, [ 0, 1,-1 ])), // side
+                getBlock(chunkFactory, structures, sum(blockPos, [-1, 1,-1 ])), // corner
+                getBlock(chunkFactory, structures, sum(blockPos, [-1, 0,-1 ])), // side
+                getBlock(chunkFactory, structures, sum(blockPos, [-1,-1,-1 ])), // corner
+                getBlock(chunkFactory, structures, sum(blockPos, [ 0,-1,-1 ])), // side
+                getBlock(chunkFactory, structures, sum(blockPos, [ 1,-1,-1 ])) // corner
               )
 
 
@@ -295,6 +303,10 @@ export const naiveMeshing = (state: ExampleState, pos: Vector3): Float32Array =>
       }
     }
   }
+
+  //console.log("In meshing");
+  //console.log(output);
+
   return new Float32Array(output);
 }
 

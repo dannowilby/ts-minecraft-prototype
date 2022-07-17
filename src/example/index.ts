@@ -5,17 +5,18 @@ import { State, createState, System, addSystem } from '../engine/state';
 import { ECState, createECState, registerComponent } from '../engine/ec';
 
 import { Camera, createCamera, freeCameraInput } from '../engine/freeCamera';
-import { blockInput, cameraInput, renderSelectionBox } from './systems/input';
+import { blockInput, cameraInput, checkChunkChange, renderSelectionBox } from './systems/input';
 import { loadChunks, unloadChunks } from './systems/world';
 
-import { ChunkFactory, loadChunk } from './chunk';
 import { RenderObject, Structure, ChunkPos } from './components/chunk';
 import { renderChunks } from './systems/chunk';
 
 import { Player, createPlayer } from './player';
 
-import { Block, BlockDictionary } from './block';
-import { fullBlockMesh } from './mesh';
+import { ChunkFactory, loadChunk } from './chunk/chunk';
+import { Block, BlockDictionary } from './chunk/block';
+import { fullBlockMesh, chunkVertexShader, chunkFragmentShader } from './chunk/mesh';
+import { initShaders } from './render';
 
 import { loadTexture } from './render';
 
@@ -32,9 +33,9 @@ import { loadTexture } from './render';
 
 export interface ExampleState extends ECState {
   chunkFactory: ChunkFactory;
-  blockDictionary: BlockDictionary;
   atlas: WebGLTexture;
   player: Player;
+  program: WebGLProgram,
 };
 
 export const init = (gl: WebGL2RenderingContext): ExampleState => {
@@ -45,41 +46,43 @@ export const init = (gl: WebGL2RenderingContext): ExampleState => {
     chunkFactory: ChunkFactory(gl),
     blockDictionary: createBlockDictionary(),
     atlas: loadTexture(gl, "atlas.png"),
+    program: initShaders(gl, chunkVertexShader, chunkFragmentShader),
   };
 
   state.components = registerComponent<RenderObject>(state.components, "renderObjects");
   state.components = registerComponent<Structure>(state.components, "structures");
   state.components = registerComponent<ChunkPos>(state.components, "chunkPos");
 
-  state = addSystem(state, "tick", unloadChunks);
-  state = addSystem(state, "tick", loadChunks);
+  // systems
+  state = addSystem(state, "playerChangeChunk", unloadChunks);
+  state = addSystem(state, "playerChangeChunk", loadChunks);
+
   state = addSystem(state, "input", cameraInput);
+  state = addSystem(state, "input", checkChunkChange);
   state = addSystem(state, "click", blockInput);
+
   state = addSystem(state, "render", renderSelectionBox);
   state = addSystem(state, "render", renderChunks);
 
   return state;
 }
 
-const createBlockDictionary = () => ([
+export const createBlockDictionary = () => ([
   {
     name: 'air',
     type: 'air',
-    mesh: fullBlockMesh,
     u: 0,
     v: 0
   },
   {
     name: 'dirt',
     type: 'fullBlock',
-    mesh: fullBlockMesh,
     u: 0.125,
     v: 0
   },
   {
     name: 'grass',
     type: 'fullBlock',
-    mesh: fullBlockMesh,
     u: 0.0,
     v: 0
   },

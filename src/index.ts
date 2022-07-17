@@ -37,6 +37,11 @@ const captureInput = (gl: WebGL2RenderingContext, state: State): State => {
 
 const main = () => {
 
+  if(!crossOriginIsolated) {
+    alert("SharedArrayBuffer not enabled! Will not function.");
+    return;
+  }
+
   const gl = createWindow();
   let profiler = createProfiler(true); // boolean parameter: print or not
   // let dispatchProfiler = createProfiler(false);

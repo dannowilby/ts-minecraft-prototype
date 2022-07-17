@@ -3,7 +3,7 @@ import { Vector3 } from '@math.gl/core';
 import { ExampleState } from '../index';
 import { State, System } from '../../engine/state';
 
-import { loadChunk, unloadChunk } from '../chunk';
+import { loadChunk, loadManyChunks, unloadChunk } from '../chunk/chunk';
 
 export const loadChunks: System = <T extends State>(gl: WebGL2RenderingContext, state: T, delta: number) => (data: any): T => {
 
@@ -19,15 +19,25 @@ export const loadChunks: System = <T extends State>(gl: WebGL2RenderingContext, 
     Math.floor(pos.z / chunkSize)
   );
 
-  for(let i = 0; i < loadDistance * 2; i++)
-    for(let j = 0; j < loadDistance * 2; j++) {
-      castedState = loadChunk(gl, castedState, new Vector3(
-        Math.floor(pos.x / chunkSize) - loadDistance + i, 
-        0,
-        Math.floor(pos.z / chunkSize) - loadDistance + j
-      ));
-      castedState.queue.push({ type: "chunkLoad", data: chunkPos })
+  const toLoad: Vector3[] = [];
+
+  const offset: Vector3[] = [];
+  const r = loadDistance;
+  for(let i = 0; i < r; i++) {
+    for(let j = 0; j < r; j++) {
+      for(let k = 0; k < r; k++) {
+        if((i*i + j*j + k*k) < r*r) {
+            offset.push(new Vector3(i, j, k));
+            offset.push(new Vector3(i, -j, k));
+        }
+      }
     }
+
+  }
+
+  console.log(offset)
+
+  castedState = loadManyChunks(gl, castedState, offset);
 
   return castedState as any as T;
 }

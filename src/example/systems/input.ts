@@ -3,7 +3,7 @@ import { ExampleState } from '../index';
 import { State, System } from '../../engine/state';
 import { freeCameraInput } from '../../engine/freeCamera';
 
-import { chunkId, chunkPosFromBlockPos, generateBlock, getBlock, setBlock, updateChunk } from '../chunk';
+import { chunkId, chunkPosFromBlockPos, getBlock, setBlock, updateChunk } from '../chunk/chunk';
 import { drawSelectionBox, rayCast } from '../player';
 import {floorVector} from '../../lib/math';
 
@@ -43,7 +43,27 @@ export const cameraInput: System = <T extends State>(gl: WebGL2RenderingContext,
   return castedState as any as T;
 }
 
-// FIXME: build surrounding chunks so no missing faces on chunk borders
+
+export const checkChunkChange: System = <T extends State>(gl: WebGL2RenderingContext, state: T, delta: number) => (data: any): T => {
+
+  let castedState = state as any as ExampleState;
+
+  const currentChunkId = chunkId(chunkPosFromBlockPos(castedState.chunkFactory, floorVector(castedState.player.position)));
+  const previousChunkId = chunkId(chunkPosFromBlockPos(castedState.chunkFactory, floorVector(castedState.player.previousPosition)));
+
+  if(!(currentChunkId === previousChunkId))
+    castedState.queue.push({
+      type: "playerChangeChunk",
+      data: null
+    })
+
+  castedState.player.previousPosition.x = castedState.player.position.x;
+  castedState.player.previousPosition.y = castedState.player.position.y;
+  castedState.player.previousPosition.z = castedState.player.position.z;
+
+  return castedState as any as T;
+}
+
 export const blockInput: System = <T extends State>(gl: WebGL2RenderingContext, state: T, delta: number) => (data: any): T => {
 
   let castedState = state as any as ExampleState;
@@ -58,10 +78,10 @@ export const blockInput: System = <T extends State>(gl: WebGL2RenderingContext, 
     return castedState as any as T;
 
   const blockPos = floorVector(hit.position);
-  const chunkPos = chunkPosFromBlockPos(castedState, blockPos);
+  const chunkPos = chunkPosFromBlockPos(castedState.chunkFactory, blockPos);
 
   const prevPos = floorVector(hit.previous);
-  const prevChunkPos = chunkPosFromBlockPos(castedState, prevPos);
+  const prevChunkPos = chunkPosFromBlockPos(castedState.chunkFactory, prevPos);
 
   // left click - remove block
   if(which == 1) {

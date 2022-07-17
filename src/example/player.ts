@@ -1,6 +1,6 @@
 
 import { ExampleState } from "./index";
-import { getBlock } from "./chunk";
+import { getBlock } from "./chunk/chunk";
 import { Matrix4, Vector3 } from "@math.gl/core";
 import { System } from "../engine/state";
 import { Camera, createCamera } from '../engine/freeCamera';
@@ -19,14 +19,20 @@ export interface Player extends Camera {
   rayStep: number;
   rayMaxLength: number;
   selectionBox: SelectionBox;
+  previousPosition: Vector3;
 };
 
-export const createPlayer = (gl: WebGL2RenderingContext): Player => ({ 
+export const createPlayer = (gl: WebGL2RenderingContext): Player => { 
+  const camera = createCamera(gl);
+  camera.position = new Vector3(0, 10, 0)
+  return ({ 
       rayStep: 0.1,
       rayMaxLength: 5,
-      ...createCamera(gl),
-      selectionBox: createSelectionBox(gl)
-})
+      ...camera,
+      selectionBox: createSelectionBox(gl),
+      previousPosition: new Vector3(-1,-1,-1),
+  });
+}
 
 export interface RayCastHit {
   position: Vector3;
@@ -146,7 +152,7 @@ export const rayCast = (gl: WebGL2RenderingContext, state: ExampleState, pos: Ve
     const previous = new Vector3(ray.x, ray.y, ray.z);
 
     ray.x += step[0];
-    if(getBlock(state, ray) != 0)
+    if(getBlock(state.chunkFactory, state.components["structures"], ray) != 0)
         return {
           position: ray,
           previous: previous,
@@ -154,7 +160,7 @@ export const rayCast = (gl: WebGL2RenderingContext, state: ExampleState, pos: Ve
     previous.x += step[0];
 
     ray.y += step[1];
-    if(getBlock(state, ray) != 0)
+    if(getBlock(state.chunkFactory, state.components["structures"], ray) != 0)
         return {
           position: ray,
           previous: previous,
@@ -162,7 +168,7 @@ export const rayCast = (gl: WebGL2RenderingContext, state: ExampleState, pos: Ve
     previous.y += step[1];
 
     ray.z += step[2];
-    if(getBlock(state, ray) != 0)
+    if(getBlock(state.chunkFactory, state.components["structures"], ray) != 0)
         return {
           position: ray,
           previous: previous,
