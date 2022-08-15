@@ -1,16 +1,9 @@
-# Some info about this project
+# ts-minecraft-prototype
 
-Controls mimic minecraft creative mode, just click in the window and then you should be able to fly around. Left clicking will remove blocks in front of you, up to 5 blocks away.
+I originally made this project to create a minecraft clone which could simulate fluids through way of cellular automata. Ultimately the engine code got too messy/complex for the goal to be done in a reasonable amount of time. I'll probably attempt this again, but I'll use an engine so I can focus on the implementation rather than the boilerplate.
 
-The arena is generated randomly each time, so it'll be different if you refresh the page.
+The engine is a rudimentary ECS system. The code for the prototype is in the example folder.
 
-I used a very basic ecs system and laid the groundwork for an event system, but due to time constraints with my class the code may resemble a plate of spaghetti.
+The branch assignment-4-lighting was a submission for an assignent I had in my computer graphics course. It used a much less developed version of the code in the master branch.
 
-I coded this in typescript and used webpack to compile the project into a simple bundle file. I used math.gl/core so that I could use predefined Vector3 and Matrix4 classes, specifically for the lookAt and perspective functions.
-
-The texture atlas I used for the blocks is taken from The Painterly Pack: http://painterlypack.net/.
-
-
-# For the future
-
-Currently this is a project that I am submitting for coursework. However, I plan on implementing a better fluid system than already exists in Minecraft, and then developing this clone further into a more playable game.
+The texture atlas I used for the blocks is taken from [The Painterly Pack](http://painterlypack.net/).
