@@ -115,7 +115,7 @@ export const blockInput: System = <T extends State>(gl: WebGL2RenderingContext, 
   // right click - add block
   if(which == 3) {
     // set the block
-    castedState = setBlock(castedState, prevPos, 1);
+    castedState = setBlock(castedState, prevPos, 4);
     
     // update the mesh
     castedState = updateChunk(gl, castedState, prevChunkPos);

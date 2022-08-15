@@ -75,6 +75,8 @@ export const loadManyChunks = (gl: WebGL2RenderingContext, state: ExampleState, 
   const structures = components["structures"];
   const chunkFactory = state.chunkFactory;
 
+  let activeThreads = 0;
+  
   for(let i = 0; i < pos.length; i++) {
 
     const entityId = chunkId(pos[i]);
@@ -90,17 +92,28 @@ export const loadManyChunks = (gl: WebGL2RenderingContext, state: ExampleState, 
     state = addComponent(state, entityId, "chunkPos", pos[i]);
   
     const worker = new Worker(new URL('../workers/meshWorker.ts', import.meta.url), { type: "module" });
+    activeThreads++;
     worker.postMessage({ chunkFactory, structures, pos: pos[i] });
     worker.onmessage = (e) => {
 
+      console.log(`Active threads: ${activeThreads}`);
+
+      if(activeThreads == 1 && state.isStartup) {
+        // disable generating text
+        const s = document.getElementById("intro");
+        if(s)
+          s.hidden = true;
+        state.isStartup = false;
+      }
+
+
+      activeThreads--;
       const renderObject = createChunkRenderObject(gl, state.program, state.chunkFactory, pos[i], e.data);
       
       state = addComponent(state, entityId, "renderObjects", renderObject);
       worker.terminate();
     }
-
   }
-
 
   return state;
 }

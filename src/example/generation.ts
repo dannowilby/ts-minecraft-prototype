@@ -2,7 +2,7 @@
 import { Vector3 } from "@math.gl/core";
 import { ChunkFactory, chunkId, localBlockPosToIndex } from "./chunk/chunk";
 import { Structure } from "./components/chunk";
-
+import SimplexNoise from "simplex-noise";
 
 // copy some noise code
 export const noise = (x: number, y: number) => {
@@ -10,6 +10,7 @@ export const noise = (x: number, y: number) => {
 }
 
 export const generateBlock = (chunkFactory: ChunkFactory, pos: Vector3): number => {
+  const n = new SimplexNoise("test");
   const chunkSize = chunkFactory.chunkSize;
 
   const baseHeight = chunkSize / 2;
@@ -18,12 +19,20 @@ export const generateBlock = (chunkFactory: ChunkFactory, pos: Vector3): number 
 
   // check for already loaded chunks
 
-  const h = baseHeight + height * noise(pos[0] / wavelength, pos[2] / wavelength);
+  const h = baseHeight + height * n.noise2D(pos[0] / wavelength, pos[2] / wavelength);
+  const ran = n.noise3D(pos[0] / wavelength, pos[1] / wavelength, pos[2] / wavelength);
 
-  if(pos[1] < 0)
-    return 1;
-  if(pos[1] < h || pos[1] > 2 * h)
-    return 2;
+  if(pos[1] < h && ran < 0.4) {
+
+    if(pos[1] == h - 1)
+      return 1;
+    if(pos[1] > h - 3)
+      return 2;
+
+    return 3;
+  }
+  if(pos[1] > 4 * h)
+    return 3;
 
   return 0;
 }
@@ -48,7 +57,6 @@ export const generateStructure = (chunkFactory: ChunkFactory, pos: Vector3): Str
         const gz = blockPos[2] + k;
 
         const l = localBlockPosToIndex(chunkFactory, i,j,k);
-        //console.log(l);
         t[l] = generateBlock(chunkFactory, new Vector3(gx, gy, gz));
       }
     }

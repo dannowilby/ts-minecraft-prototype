@@ -19,7 +19,8 @@ export const createWindow = (): WebGL2RenderingContext => {
     throw new Error("Webgl couldn't instanciate");
 
   // baby blue clear color for a basic skybox
-  gl.clearColor(0.537, 0.811, 0.941, 1.0);
+  // gl.clearColor(0.537, 0.811, 0.941, 1.0);
+  gl.clearColor(1.0, 1.0, 1.0, 1.0);
   gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
 
   gl.enable(gl.DEPTH_TEST);

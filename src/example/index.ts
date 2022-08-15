@@ -35,7 +35,8 @@ export interface ExampleState extends ECState {
   chunkFactory: ChunkFactory;
   atlas: WebGLTexture;
   player: Player;
-  program: WebGLProgram,
+  program: WebGLProgram;
+  isStartup: boolean;
 };
 
 export const init = (gl: WebGL2RenderingContext): ExampleState => {
@@ -47,6 +48,7 @@ export const init = (gl: WebGL2RenderingContext): ExampleState => {
     blockDictionary: createBlockDictionary(),
     atlas: loadTexture(gl, "atlas.png"),
     program: initShaders(gl, chunkVertexShader, chunkFragmentShader),
+    isStartup: true,
   };
 
   state.components = registerComponent<RenderObject>(state.components, "renderObjects");
@@ -84,6 +86,18 @@ export const createBlockDictionary = () => ([
     name: 'grass',
     type: 'fullBlock',
     u: 0.0,
+    v: 0
+  },
+  {
+    name: 'stone',
+    type: 'fullBlock',
+    u: 0.0625,
+    v: 0
+  },
+  {
+    name: 'wood',
+    type: 'fullBlock',
+    u: 0.250,
     v: 0
   },
 ]);

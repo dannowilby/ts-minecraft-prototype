@@ -17,6 +17,7 @@ export const chunkVertexShader = `#version 300 es
   uniform mat4 model;
   
   out float ao;
+  out vec3 fog_depth;
   out vec2 text_coords;
   
   void main() {
@@ -24,6 +25,8 @@ export const chunkVertexShader = `#version 300 es
     text_coords = uv_Coords;
     ao = ao_Coords;
     
+    fog_depth = (view * model * vec4(v_Position, 1.0)).xyz;
+
     gl_Position = projection * view * model * vec4(v_Position, 1.0);
   }
 `;
@@ -33,6 +36,7 @@ export const chunkFragmentShader = `#version 300 es
   
   in vec2 text_coords;
   in float ao;
+  in vec3 fog_depth;
   
   uniform sampler2D texture_atlas;
   
@@ -45,7 +49,12 @@ export const chunkFragmentShader = `#version 300 es
     
     vec4 atlas = texture(texture_atlas, text_coords);
 
-    frag_color = vec4(darkenAmount * atlas.xyz, atlas.w);
+    float fog_near = 18.0;
+    float fog_far = 24.0;
+    float fog_amount = smoothstep(fog_near, fog_far, length(fog_depth));
+    vec4 fog_color = vec4(1.0);
+
+    frag_color = mix(vec4(darkenAmount * atlas.xyz, atlas.w), fog_color, fog_amount);
   }
 `;
 
